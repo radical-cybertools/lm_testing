@@ -1,7 +1,7 @@
 
 ### Usage:  
 
-        my_program.py [-tc TC ...] [-lm LM ...] [-viz VIZ] [-h]
+        lm_test.py [-tc TC ...] [-lm LM ...] [-viz VIZ] [-h]
 
    This script consumes a set of test cases (test_cases/tc_*.json).
    For each test case, it will create a workload as described, and
