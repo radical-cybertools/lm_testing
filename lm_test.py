@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__doc__ = open('./README.md', 'r').read()
+__doc__ = open('./README.md', 'r').read().replace('### ', '')
 
 import os
 import sys
