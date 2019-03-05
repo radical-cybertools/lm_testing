@@ -19,7 +19,9 @@
    Test runs will create subdirectories under `./scratch/`.  Runs will be
    skipped if the respective directory exist.  The name is formed as:
 
+```sh
         ./scratch/<launch_method>/<basename(test_case)>
+```
 
    A summary line is written to `summary.txt` for each use case.  It
    contains the following space delimited fields describing the test state
@@ -54,6 +56,7 @@
 
 ### Options:
 
+```
         -h               : this screen.
         --launch-methods
         -lm LM_1 ...     : select launch methods to test
@@ -67,13 +70,13 @@
         -v  VIZ          : select visualization methods
                            available: curses, simple, text, mute (off)
                            default  : text
-
+```
 
 ### Test Cases:
 
    - Test cases are specified as json files, with the following format:
 
-        ```
+```json
         {
             "comment"   : "20 tasks of random size on 1 node",
             "nodes"     : 1,
@@ -86,11 +89,11 @@
             "gpus"      : 0,
             "exe"       : "hello_jsrun verbose 3"
         }
-        ``` 
+``` 
 
    - The following keys are supported:
 
-        ```
+```
         - 'comment' : description of test case (optional)
         - 'nodes'   : number of nodes to allocate for the test
         - 'cpn'     : cores per node
@@ -106,11 +109,11 @@
                       This will usually be something like 'hello_jsrun' or
                       some other LM specific workload which can be used to
                       verify LM correctness.
-        ```
+```
 
 ### Example:
 
-        ```shell
+```sh
         $ rm -r scratch/fork/tc_1/   # remove test scratch dir
         $ ./lm_test.py -lm fork -tc test_cases/tc_1.json
 
@@ -128,23 +131,25 @@
 
         $ cat summary.txt
         tc_1 fork 1 42 0 42 6 0 6 42 0 0 0 0 42 0
-       ```shell
+```
 
 ### Notes:
 
    - The PRRTE test require `PRRTE_PREFIX` to be set correctly,
      like this:
 
+```sh
         > export PRRTE_PREFIX=/home/merzky/radical/prte/install 
-
+```
 
    - To enable curses based visualization, install the python
      module `asciimatics`:
 
+```sh
         > virtualenv ve
         > source ve/bin/activate
         > pip install pip install asciimatics
-
+```
 
    - The tests run a modified version of `hello_jsrun` which accepts
      a second parameter which defines a number of seconds to sleep.
@@ -160,5 +165,4 @@
      workload execution prepared up to the point where only the node
      list is used to determine the actual node names to be used.
    - better evaluation of test results
-
 
