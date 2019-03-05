@@ -114,8 +114,8 @@
 ### Example:
 
 ```sh
-        $ rm -r scratch/fork/tc_1/   # remove test scratch dir
-        $ ./lm_test.py -lm fork -tc test_cases/tc_1.json
+        > rm -r scratch/fork/tc_1/   # remove test scratch dir
+        > ./lm_test.py -lm fork -tc test_cases/tc_1.json
 
          ----------------------------------------------------------------
          text case: tc_1 [ fork ]
@@ -129,7 +129,7 @@
          ||     42 |     14 |     28 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     14 |     28 |      0 ||
          ||     42 |      0 |     42 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |      0 |     42 |      0 ||
 
-        $ cat summary.txt
+        > cat summary.txt
         tc_1 fork 1 42 0 42 6 0 6 42 0 0 0 0 42 0
 ```
 
