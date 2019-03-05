@@ -10,7 +10,7 @@ try:
     from asciimatics.screen     import Screen
     use_curses = True
 except ImportError:
-    sys.stderr.write('warning: could not load asciimatics - disable curses')
+    sys.stderr.write('\nwarning: could not load asciimatics - disable curses\n\n')
     use_curses = False
 
 
