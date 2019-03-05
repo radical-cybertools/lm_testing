@@ -7,10 +7,10 @@
    For each test case, it will create a workload as described, and
    will prepare to run that workload via
 
-    - fork
-    - jsrun 
-    - prrte (prun)
-    - orte  (orte-submit)
+        - fork
+        - jsrun 
+        - prrte (prun)
+        - orte  (orte-submit)
 
    For the `prrte` and `orte` launchers, a  DVM is created and terminated
    on the fly, for each test case.  The state of all nodes used is reset
@@ -73,6 +73,7 @@
 
    - Test cases are specified as json files, with the following format:
 
+        ```
         {
             "comment"   : "20 tasks of random size on 1 node",
             "nodes"     : 1,
@@ -85,9 +86,11 @@
             "gpus"      : 0,
             "exe"       : "hello_jsrun verbose 3"
         }
+        ``` 
 
    - The following keys are supported:
 
+        ```
         - 'comment' : description of test case (optional)
         - 'nodes'   : number of nodes to allocate for the test
         - 'cpn'     : cores per node
@@ -103,9 +106,11 @@
                       This will usually be something like 'hello_jsrun' or
                       some other LM specific workload which can be used to
                       verify LM correctness.
+        ```
 
 ### Example:
 
+        ```shell
         $ rm -r scratch/fork/tc_1/   # remove test scratch dir
         $ ./lm_test.py -lm fork -tc test_cases/tc_1.json
 
@@ -123,6 +128,7 @@
 
         $ cat summary.txt
         tc_1 fork 1 42 0 42 6 0 6 42 0 0 0 0 42 0
+       ```shell
 
 ### Notes:
 
@@ -144,7 +150,6 @@
      a second parameter which defines a number of seconds to sleep.
      An unpatched `hello_jsrun` will ignore that parameter, potentially
      yielding different test results due to increased system pressure.
-
 
 
 ### Missing Features:

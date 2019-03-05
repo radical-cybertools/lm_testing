@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-__doc__ = open('./README.md', 'r').read().replace('### ', '')
-
+import re
 import os
 import sys
 import glob
@@ -20,8 +19,10 @@ from constants import FREE, BUSY
 from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED
 
 
-'''
-'''
+_doc    = open('./README.md', 'r') \
+              .read() \
+              .replace('### ', '')
+__doc__ = re.sub(r'^\s*```.*$\n', '', _doc, flags=re.MULTILINE)
 
 
 # ------------------------------------------------------------------------------
