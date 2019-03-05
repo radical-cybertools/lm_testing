@@ -1,0 +1,14 @@
+
+{
+    "_comment"  : "12 tasks, each using 1 cores and 1 GPU",
+    "nodes"     : 20, 
+    "cpn"       : 42, 
+    "gpn"       : 6, 
+
+    "procs"     : 1,
+    "threads"   : 1,
+    "gpus"      : 1,
+    "tasks"     : 420,
+    "exe"       : "hello_jsrun verbose 3"
+}
+

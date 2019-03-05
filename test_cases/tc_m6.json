@@ -1,0 +1,14 @@
+
+{
+    "_comment"  : "300 concurrent single/multi-core CU, with CPU, GPU or both",
+    "nodes"     : 300, 
+    "cpn"       : 42, 
+    "gpn"       : 6, 
+
+    "procs"     : 4,
+    "threads"   : 10,
+    "gpus"      : 1,
+    "tasks"     : 300,
+    "exe"       : "hello_jsrun verbose 3"
+}
+

@@ -1,0 +1,13 @@
+
+{
+    "nodes"     : 1, 
+    "cpn"       : 42, 
+    "gpn"       : 6, 
+
+    "procs"     : 1,
+    "threads"   : 2,
+    "gpus"      : 0,
+    "tasks"     : 21,
+    "exe"       : "hello_jsrun verbose 3"
+}
+
