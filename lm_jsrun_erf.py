@@ -38,13 +38,23 @@ class LM_JSRUN_ERF(object):
         fcmd    = '%s/%s.cmd' % (pwd, tid)
         ferf    = '%s/%s.erf'  % (pwd, tid)
 
+
         erf_str = '\ncpu_index_using: physical\n'
         rank = 0
+
         for node_uid, cores, gpus in slots:
-            erf_str += 'rank: %d: {host: %d; cpu: {%s}; gpu: {%s} }\n' \
-                    % (rank, int(node_uid) + 1, ','.join(cores), ','.join(gpus))
-            rank   += 1
-        erf_str = '\n'
+
+            cores = [str(c) for c in cores]
+            gpus  = [str(g) for g in gpus ]
+
+            node_uid = int(node_uid) + 1
+            erf_str += 'rank: %d: {host: %d' % (rank, node_uid)
+            if cores: erf_str += '; cpu: {%s}' % ','.join(cores)
+            if gpus : erf_str += '; gpu: {%s}' % ','.join(gpus)
+            erf_str += ' }\n'
+            rank    += 1
+
+        erf_str += '\n'
 
         with open(ferf, 'w') as f:
             f.write('\n%s\n' % erf_str)

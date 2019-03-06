@@ -465,7 +465,7 @@ if __name__ == '__main__':
     parser.add_argument('-h', '--help',           action='store_true')
     parser.add_argument('-tc','--test-cases',     nargs='+', default='all')
     parser.add_argument('-lm','--launch-methods', nargs='+', default=['fork'],
-                        choices=['fork', 'jsrun_rs, jsrun_erf', 'prrte', 'orte'])
+                        choices=['fork', 'jsrun_rs', 'jsrun_erf', 'prrte', 'orte'])
     parser.add_argument('-v','--visualizer',      nargs=1,   default=['text'],
                         choices=['curses', 'simple', 'text', 'mute'])
     args = parser.parse_args()

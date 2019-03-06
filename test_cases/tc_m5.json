@@ -2,7 +2,7 @@
 {
     "_comment"  : "6 CU, each using n cores and 1 GPU on 1 work node?  n = 4, 2 generations",
     "nodes"     : 1, 
-    "cpn"       : 42, 
+    "cpn"       : 40,
     "gpn"       : 6, 
 
     "procs"     : 4,

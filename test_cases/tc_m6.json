@@ -2,7 +2,7 @@
 {
     "_comment"  : "300 concurrent single/multi-core CU, with CPU, GPU or both",
     "nodes"     : 300, 
-    "cpn"       : 42, 
+    "cpn"       : 40,
     "gpn"       : 6, 
 
     "procs"     : 4,

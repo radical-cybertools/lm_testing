@@ -2,7 +2,7 @@
 {
     "_comment"  : "n CU, each using 1 core on 1 work node 2 generations",
     "nodes"     : 1, 
-    "cpn"       : 42, 
+    "cpn"       : 40,
     "gpn"       : 6, 
 
     "procs"     : 1,

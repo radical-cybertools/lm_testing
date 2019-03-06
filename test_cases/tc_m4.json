@@ -2,7 +2,7 @@
 {
     "_comment"  : "12 tasks, each using 1 cores and 1 GPU",
     "nodes"     : 20, 
-    "cpn"       : 42, 
+    "cpn"       : 40,
     "gpn"       : 6, 
 
     "procs"     : 1,
