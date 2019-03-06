@@ -35,6 +35,7 @@ class LM_JSRUN(object):
 
         fout   = '%s/%s.out' % (pwd, tid)
         ferr   = '%s/%s.err' % (pwd, tid)
+        fcmd   = '%s/%s.cmd' % (pwd, tid)
         frs    = '%s/%s.rs'  % (pwd, tid)
 
         rs_str = ''
@@ -52,6 +53,9 @@ class LM_JSRUN(object):
             f.write('\n%s\n' % rs_str)
 
         cmd = 'jsrun -a 1 -U %s %s 1>%s 2>%s' % (frs, exe, fout, ferr)
+
+        with open(fcmd, 'w') as f:
+            f.write('\n%s\n' % cmd)
 
         return cmd
 
