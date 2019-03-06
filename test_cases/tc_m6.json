@@ -9,6 +9,6 @@
     "threads"   : 10,
     "gpus"      : 1,
     "tasks"     : 300,
-    "exe"       : "hello_jsrun verbose 3"
+    "exe"       : "$(pwd -P)/bin/hello_jsrun verbose 3"
 }
 
