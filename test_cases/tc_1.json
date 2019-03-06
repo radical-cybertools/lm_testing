@@ -8,6 +8,6 @@
     "threads"   : 1,
     "gpus"      : 0,
     "tasks"     : 42,
-    "exe"       : "hello_jsrun verbose 3"
+    "exe"       : "/gpfs/alpine/bip178/scratch/merzky1/lm_testing/hello_jsrun verbose 3"
 }
 
