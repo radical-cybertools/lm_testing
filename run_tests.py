@@ -369,7 +369,7 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
         v.header('text case: %s [ %s ]' % (tc['uid'], launcher))
         v.update()
 
-        lm = LM.create(launcher, rm)
+        lm = LM.create(launcher, nodes)
 
         waiting     = tasks
         scheduled   = list()
