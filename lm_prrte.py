@@ -1,6 +1,7 @@
 
 import os
 import time
+import tempfile
 
 import subprocess as sp
 
@@ -10,26 +11,32 @@ class LM_PRRTE(object):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, rm):
+    def __init__(self, nodes):
 
-        self._rm      = rm
         self._proc    = None
         self._dvm_uri = None
 
-        pre  = os.environ['PRRTE_PREFIX']
-        exe  = '%s/bin/prte --prefix %s' % (pre, pre)
-        cmd  = '%s --report-uri prrte_dvm.uri 2>&1 >> prrte.log' % exe
-        proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
+        flog   = 'prrte.log'
+        furi   = 'prrte.uri'
+        fhosts = 'prrte.hosts'
 
-        self._proc = proc
+        with open(fhosts, 'w') as fout:
+            for node_uid, cores, gpus in nodes:
+                fout.write('%s slots=%d\n' % (node_uid, len(cores)))
+
+        pre  = os.environ['PRRTE_PREFIX']
+        prte = '%s/bin/prte --prefix %s' % (pre, pre)
+        cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
+               % (prte, furi, fhosts, flog)a
+
+        self._proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
 
         for _ in range(100):
 
-            try:    self._dvm_uri = open('prrte_dvm.uri', 'r').read().strip()
+            try:    self._dvm_uri = open(furi, 'r').read().strip()
             except: pass
 
             if self._dvm_uri:
-              # print 'dvm uri: %s' % self._dvm_uri
                 break
 
             time.sleep(0.1)
