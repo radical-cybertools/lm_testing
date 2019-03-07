@@ -27,7 +27,7 @@ class LM_PRRTE(object):
         pre  = os.environ['PRRTE_PREFIX']
         prte = '%s/bin/prte --prefix %s' % (pre, pre)
         cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
-               % (prte, furi, fhosts, flog)a
+               % (prte, furi, fhosts, flog)
 
         self._proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
 

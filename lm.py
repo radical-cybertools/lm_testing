@@ -5,7 +5,7 @@
 class LM(object):
 
     @staticmethod
-    def create(launcher, rm):
+    def create(launcher, nodes):
 
         from lm_fork      import LM_FORK
         from lm_jsrun_rs  import LM_JSRUN_RS
@@ -19,7 +19,7 @@ class LM(object):
               'prrte'    : LM_PRRTE,
               'orte'     : LM_ORTE}[launcher]
 
-        return lm(rm)
+        return lm(nodes)
 
 
 # ------------------------------------------------------------------------------
