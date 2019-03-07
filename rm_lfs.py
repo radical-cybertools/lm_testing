@@ -16,7 +16,7 @@ class RM_LFS(object):
 
         # FIXME: configurable
         self._cpn   = 20
-        self._gpn   =  6
+        self._gpn   =  4
         self._nodes = list()
         
         # filter batch node (localhost) from the node list

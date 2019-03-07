@@ -10,7 +10,8 @@ class LM_JSRUN_RS(object):
     #
     def __init__(self, nodes):
 
-        pass
+        self._nodes = nodes
+        self._nuids = [node[0] for node in self._nodes]
 
 
     # --------------------------------------------------------------------------
@@ -43,8 +44,9 @@ class LM_JSRUN_RS(object):
         rs_id  = 0
         for node_uid, cores, gpus in slots:
 
+            node_uid = self._nuids.index(node_uid) + 1
             rs_str += 'RS %d: {'  % rs_id
-            rs_str += ' host: %d' % (int(node_uid) + 1)
+            rs_str += ' host: %d' % node_uid
             if cores: rs_str += ' cpu: %s'  % ' '.join([str(c) for c in cores])
             if gpus : rs_str += ' gpu: %s'  % ' '.join([str(g) for g in gpus])
             rs_str += ' }\n'
@@ -53,7 +55,7 @@ class LM_JSRUN_RS(object):
         with open(frs, 'w') as f:
             f.write('\n%s\n' % rs_str)
 
-        cmd = 'jsrun -a 1 -U %s %s 1>%s 2>%s' % (frs, exe, fout, ferr)
+        cmd = 'jsrun -a 1 --nrs %d -U %s %s 1>%s 2>%s' % (rs_id + 1, frs, exe, fout, ferr)
 
         with open(fcmd, 'w') as f:
             f.write('\n%s\n' % cmd)
