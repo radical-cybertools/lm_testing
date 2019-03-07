@@ -10,8 +10,9 @@ class LM_ORTE(object):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, nodes):
+    def __init__(self, rm):
 
+        self._rm      = rm
         self._proc    = None
         self._dvm_uri = None
 
@@ -43,7 +44,7 @@ class LM_ORTE(object):
 
     # --------------------------------------------------------------------------
     #
-    def close(self, nodes=None):
+    def close(self):
 
         if self._proc:
 

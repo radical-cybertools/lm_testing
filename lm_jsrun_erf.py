@@ -7,14 +7,14 @@ class LM_JSRUN_ERF(object):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, nodes):
+    def __init__(self, rm):
 
-        pass
+        self._rm = rm
 
 
     # --------------------------------------------------------------------------
     #
-    def close(self, nodes):
+    def close(self):
 
         pass
 

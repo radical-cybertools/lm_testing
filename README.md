@@ -1,7 +1,7 @@
 
 ### Usage:  
 
-        lm_test.py [-tc TC ...] [-lm LM ...] [-viz VIZ] [-h]
+        run_test.py [-tc TC ...] [-lm LM ...] [-rm RM] [-viz VIZ] [-h]
 
    This script consumes a set of test cases (test_cases/tc_*.json).
    For each test case, it will create a workload as described, and
@@ -14,7 +14,10 @@
 
    For the `prrte` and `orte` launchers, a  DVM is created and terminated
    on the fly, for each test case.  The state of all nodes used is reset
-   between individual test cases
+   between individual test cases.
+
+   A `resource manager` flag is used to inform the tester on how to obtain the
+   required system information (list of nodes, cores per node, etc.).
 
    Test runs will create subdirectories under `./scratch/`.  Runs will be
    skipped if the respective directory exist.  The name is formed as:
@@ -58,14 +61,18 @@
 
 ```
         -h               : this screen.
-        --launch-methods
-        -lm LM_1 ...     : select launch methods to test
-                           available: fork, jsrun, prrte, orte
-                           default  : all
         --test-cases
         -tc TC_1 ...     : select test cases to test against
                            available: see subdir `test_cases`
                            default  : all 
+        --launch-methods
+        -lm LM_1 ...     : select launch methods to test
+                           available: fork, jsrun, prrte, orte
+                           default  : all
+        --resource-manager
+        -rm RM           : select the local resource manager
+                           available: fork, lfs
+                           default  : fork
         --visualizer
         -v  VIZ          : select visualization methods
                            available: curses, simple, text, mute (off)
@@ -115,7 +122,7 @@
 
 ```sh
         > rm -r scratch/fork/tc_1/   # remove test scratch dir
-        > ./lm_test.py -lm fork -tc test_cases/tc_1.json
+        > ./run_test.py -lm fork -tc test_cases/tc_1.json
 
          ----------------------------------------------------------------
          text case: tc_1 [ fork ]

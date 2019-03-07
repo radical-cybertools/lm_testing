@@ -14,6 +14,7 @@ import subprocess as sp
 
 from viz import VIZ  # visualizers
 from lm  import LM   # launch methods
+from rm  import RM   # resource managers
 
 from constants import FREE, BUSY
 from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED
@@ -59,7 +60,7 @@ def create_nodes(pwd, tc):
 
 # ------------------------------------------------------------------------------
 #
-def create_tasks(pwd, tc):
+def create_tasks(tc, pwd):
     '''
     from a test case description like this:
 
@@ -342,7 +343,7 @@ def wait_tasks(nodes, running):
 
 # ------------------------------------------------------------------------------
 #
-def run_tc(launcher, visualizer, tc, pwd):
+def run_tc(rmgr, launcher, visualizer, tc, pwd):
     '''
     For the given set of tasks, do the following:
 
@@ -354,9 +355,11 @@ def run_tc(launcher, visualizer, tc, pwd):
     attempted when some other task finished and frees resources
     '''
 
+    rm = RM.create(rmgr)
+
     # prepare node list, create ctasks for this tc
-    nodes = create_nodes(pwd, tc)
-    tasks = create_tasks(pwd, tc)
+    nodes = rm.get_nodes(tc)
+    tasks = create_tasks(tc, pwd)
 
     v  = None  # visualizer
     lm = None  # launch method
@@ -366,7 +369,7 @@ def run_tc(launcher, visualizer, tc, pwd):
         v.header('text case: %s [ %s ]' % (tc['uid'], launcher))
         v.update()
 
-        lm = LM.create(launcher, nodes)
+        lm = LM.create(launcher, rm)
 
         waiting     = tasks
         scheduled   = list()
@@ -406,8 +409,8 @@ def run_tc(launcher, visualizer, tc, pwd):
         v.update()
 
     finally:
-        if v : v.close()
-        if lm: lm.close(nodes)
+        if v : v .close()
+        if lm: lm.close()
 
     # summary:
     summary = '%s %s ' % (tc['uid'], launcher)
@@ -462,11 +465,13 @@ def run_tc(launcher, visualizer, tc, pwd):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(usage=__doc__, add_help=False)
-    parser.add_argument('-h', '--help',           action='store_true')
-    parser.add_argument('-tc','--test-cases',     nargs='+', default='all')
-    parser.add_argument('-lm','--launch-methods', nargs='+', default=['fork'],
+    parser.add_argument('-h', '--help',             action='store_true')
+    parser.add_argument('-tc','--test-cases',       nargs='+', default='all')
+    parser.add_argument('-lm','--launch-methods',   nargs='+', default=['fork'],
                         choices=['fork', 'jsrun_rs', 'jsrun_erf', 'prrte', 'orte'])
-    parser.add_argument('-v','--visualizer',      nargs=1,   default=['text'],
+    parser.add_argument('-rm','--resource-manager', nargs=1,   default=['fork'],
+                        choices=['fork', 'lfs'])
+    parser.add_argument('-v','--visualizer',        nargs=1,   default=['text'],
                         choices=['curses', 'simple', 'text', 'mute'])
     args = parser.parse_args()
 
@@ -476,6 +481,7 @@ if __name__ == '__main__':
 
     visualizer = args.visualizer[0]
     launchers  = args.launch_methods
+    rmgr       = args.resource_manager[0]
     tc_names   = args.test_cases
 
     if tc_names == 'all':
@@ -511,14 +517,17 @@ if __name__ == '__main__':
                 try:
                     os.mkdir(pwd)
                 except OSError:
-                    print
-                    print 'skipping test case %s [%s] - scratch exists (%s)' \
+                    print '\nskip test case %s [%s] - scratch exists (%s)\n' \
                         % (tc['uid'], launcher, pwd)
-                    print
                     continue
 
-                summary = run_tc(launcher, visualizer, tc, pwd)
-                fout.write('%s\n' % summary)
+                try:
+                    summary = run_tc(rmgr, launcher, visualizer, tc, pwd)
+                    fout.write('%s\n' % summary)
+
+                except Exception as e:
+                    print '\nfail test case %s [%s]: %s\n' \
+                        % (tc['uid'], launcher, repr(e))
 
 
 # ------------------------------------------------------------------------------
