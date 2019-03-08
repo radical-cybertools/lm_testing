@@ -24,7 +24,7 @@ class LM_PRRTE(object):
             for node_uid, cores, gpus in nodes:
                 fout.write('%s slots=%d\n' % (node_uid, len(cores)))
 
-        pre  = os.environ['PRRTE_PREFIX']
+        pre  = os.environ['PRRTE_DIR']
         prte = '%s/bin/prte --prefix %s' % (pre, pre)
         cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
                % (prte, furi, fhosts, flog)
@@ -33,11 +33,16 @@ class LM_PRRTE(object):
 
         for _ in range(100):
 
-            try:    self._dvm_uri = open(furi, 'r').read().strip()
-            except: pass
-
-            if self._dvm_uri:
-                break
+            try:
+                with open(furi, 'r') as fin:
+                    for line in fin.readlines():
+                        if '://' in line:
+                            self._dvm_uri = line.strip()
+                            break
+                        else:
+                            print '>> %s' % line
+            except:
+                pass
 
             time.sleep(0.1)
 

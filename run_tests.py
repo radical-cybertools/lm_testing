@@ -25,6 +25,8 @@ _doc    = open('./README.md', 'r') \
               .replace('### ', '')
 __doc__ = re.sub(r'^\s*```.*$\n', '', _doc, flags=re.MULTILINE)
 
+_tzero  = time.time()
+
 
 # ------------------------------------------------------------------------------
 #
@@ -289,21 +291,26 @@ def execute_tasks(lm, pwd, scheduled):
     Prepare the given task for excution, and run it.
     '''
 
-    running = list()
-    for task in scheduled:
+    with open('popen.log', 'a+') as fout:
 
-        if task['state'] == FAILED:
-            continue
+        running = list()
+        for task in scheduled:
 
-        assert(task['state'] == SCHEDULED)
+            if task['state'] == FAILED:
+                continue
 
-        task['cmd']   = lm.prepare_task(pwd, task)
-        task['proc']  = sp.Popen(task['cmd'], shell=True)
-        task['state'] = RUNNING
+            assert(task['state'] == SCHEDULED)
 
-        running.append(task)
+            task['cmd']   = lm.prepare_task(pwd, task)
+            task['proc']  = sp.Popen(task['cmd'], shell=True)
+            task['state'] = RUNNING
 
-    return running
+            now = time.time() - _tzero
+            fout.write('%5.3f %s\n' % (now, task['cmd']))
+
+            running.append(task)
+
+        return running
 
 
 # ------------------------------------------------------------------------------
