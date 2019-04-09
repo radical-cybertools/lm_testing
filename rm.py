@@ -10,10 +10,10 @@ class RM(object):
     def create(rmgr):
 
         from rm_fork import RM_FORK
-        from rm_lfs  import RM_LFS
+        from rm_lsf  import RM_LSF
 
         rm = {'fork' : RM_FORK,
-              'lfs'  : RM_LFS
+              'lsf'  : RM_LSF
              }[rmgr]
 
         return rm()

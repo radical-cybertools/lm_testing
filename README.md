@@ -71,7 +71,7 @@
                            default  : all
         --resource-manager
         -rm RM           : select the local resource manager
-                           available: fork, lfs
+                           available: fork, lsf
                            default  : fork
         --visualizer
         -v  VIZ          : select visualization methods

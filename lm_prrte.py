@@ -29,6 +29,9 @@ class LM_PRRTE(object):
         cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
                % (prte, furi, fhosts, flog)
 
+        with open('popen.log', 'a') as fout:
+            fout.write('%s\n' % cmd)
+
         self._proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
 
         for _ in range(100):
@@ -64,6 +67,10 @@ class LM_PRRTE(object):
         if self._proc:
 
             term = 'prun --hnp %s --terminate' % self._dvm_uri
+
+            with open('popen.log', 'a') as fout:
+                fout.write('%s\n' % term)
+
             proc = sp.Popen(term, stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
             proc.wait()
 

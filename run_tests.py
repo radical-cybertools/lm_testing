@@ -477,7 +477,7 @@ if __name__ == '__main__':
     parser.add_argument('-lm','--launch-methods',   nargs='+', default=['fork'],
                         choices=['fork', 'jsrun_rs', 'jsrun_erf', 'prrte', 'orte'])
     parser.add_argument('-rm','--resource-manager', nargs=1,   default=['fork'],
-                        choices=['fork', 'lfs'])
+                        choices=['fork', 'lsf'])
     parser.add_argument('-v','--visualizer',        nargs=1,   default=['text'],
                         choices=['curses', 'simple', 'text', 'mute'])
     args = parser.parse_args()
