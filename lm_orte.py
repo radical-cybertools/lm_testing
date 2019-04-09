@@ -26,6 +26,9 @@ class LM_ORTE(object):
         cmd  = 'orte-dvm --report-uri %s --hostfile %s 2>&1 >> %s' \
                % (furi, fhosts, flog)
 
+        with open('popen.log', 'a') as fout:
+            fout.write('%s\n' % cmd)
+
         self._proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
 
         for _ in range(100):
@@ -56,6 +59,10 @@ class LM_ORTE(object):
         if self._proc:
 
             term = 'orterun --hnp %s --terminate' % self._dvm_uri
+
+            with open('popen.log', 'a') as fout:
+                fout.write('%s\n' % term)
+
             proc = sp.Popen(term, stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
             proc.wait()
 
@@ -101,6 +108,7 @@ class LM_ORTE(object):
              % (self._dvm_uri, np_flag, map_flag, host_str, exe, fout, ferr)
 
         return cmd
+
 
 # ------------------------------------------------------------------------------
 
