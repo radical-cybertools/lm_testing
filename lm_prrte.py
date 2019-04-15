@@ -17,8 +17,8 @@ class LM_PRRTE(object):
         self._dvm_uri = None
 
         flog   = 'prrte.log'
-        furi   = 'prrte.uri'
-        fhosts = 'prrte.hosts'
+        furi   = '/tmp/prrte.uri'
+        fhosts = '/tmp/prrte.hosts'
 
         with open(fhosts, 'w') as fout:
             for node_uid, cores, gpus in nodes:
