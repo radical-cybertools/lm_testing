@@ -43,7 +43,7 @@ test -z "$GPU_INFO" && GPU_INFO="$CUDA_VISIBLE_DEVICES"
 test -z "$GPU_INFO" && GPU_INFO="$GPU_DEVICE_ORDINAL"
 GPU_INFO=$(echo " $GPU_INFO " | tr ',' ' ')
 
-GPU_NBITS=$(/usr/sbin/lspci | grep " VGA " | wc -l)
+GPU_NBITS=$(/usr/sbin/lspci | grep -e ' GV100GL ' | wc -l)
 GPU_BITS=''
 n=0
 while test "$n" -lt "$GPU_NBITS"

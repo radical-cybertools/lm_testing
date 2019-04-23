@@ -38,7 +38,7 @@ class RM_LSF(RM):
                     hosts.add(host)
 
         for host in hosts:
-            self._nodes.append([host, self._cpn, self._gpn])
+            self._nodes.append([host, host, self._cpn, self._gpn])
 
 
     # --------------------------------------------------------------------------
@@ -56,10 +56,9 @@ class RM_LSF(RM):
                             % (nnodes, len(self._nodes)))
 
         for i in range(nnodes):
-            uid, cpn, gpn = self._nodes[i]
-            # FIXME: get name from nodelist
-            nodes.append([str(uid), 'node_%s' % uid, 
-                         [FREE] * cpn, [FREE] * gpn])
+            uid, node, cpn, gpn = self._nodes[i]
+            nodes.append([uid, node, [FREE] * cpn, [FREE] * gpn])
+            print node
 
         return nodes
 

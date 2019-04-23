@@ -15,7 +15,7 @@ except ImportError:
 
 
 from constants import FREE, BUSY
-from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED
+from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED, MISPLACED
 
 
 if use_curses:
@@ -111,7 +111,8 @@ if use_curses:
                         SCHEDULED : [SCHEDULED, (Screen.COLOUR_GREEN,  0)],
                         RUNNING   : [RUNNING  , (Screen.COLOUR_GREEN,  0)],
                         DONE      : [DONE     , (Screen.COLOUR_GREEN,  0)],
-                        FAILED    : [FAILED   , (Screen.COLOUR_GREEN,  0)]}
+                        FAILED    : [FAILED   , (Screen.COLOUR_GREEN,  0)],
+                        MISPLACED : [MISPLACED, (Screen.COLOUR_GREEN,  0)]}
 
 
         # --------------------------------------------------------------------------
@@ -350,7 +351,7 @@ class VizText(object):
         self._iter     = 0
 
         self._header = ' ||  cores |   busy |   free ||   gpus |   busy |   free |' \
-                     + '|  tasks |    new |   wait |  sched |    run |   done |   fail ||' 
+                     + '|  tasks |    new |   wait |  sched |    run |   done |   fail | xplace ||' 
 
 
     # --------------------------------------------------------------------------
@@ -396,13 +397,14 @@ class VizText(object):
         t_running   = len([1 for t in self._tasks if t['state'] == RUNNING])
         t_done      = len([1 for t in self._tasks if t['state'] == DONE])
         t_failed    = len([1 for t in self._tasks if t['state'] == FAILED])
+        t_misplaced = len([1 for t in self._tasks if t['state'] == MISPLACED])
 
         data  = ' || %6d | %6d | %6d || %6d | %6d | %6d |' \
             % (c_total, c_busy, c_free, g_total, g_busy, g_free)
 
-        data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
+        data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
               % (t_total, t_new, t_waiting, t_scheduled,
-                 t_running ,t_done, t_failed)
+                 t_running ,t_done, t_failed, t_misplaced)
 
         if data != self._old_data:
             print data
