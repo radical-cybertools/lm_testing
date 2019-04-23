@@ -4,11 +4,13 @@ import socket
 
 import multiprocessing as mp
 
+from rm        import RM
 from constants import FREE
 
 
 # ------------------------------------------------------------------------------
-class RM_LFS(object):
+#
+class RM_LFS(RM):
 
     # --------------------------------------------------------------------------
     #
@@ -16,8 +18,12 @@ class RM_LFS(object):
 
         self._nnodes   = 1  # TODO: make configurable for debug purposes
         self._hostname = socket.gethostname()
-        self._cpn      = mp.cpu_count()
-        self._gpn      = int(os.popen('lspci | grep " VGA " | wc -l').read())
+
+        self._tgt = tgt
+        self._cfg = cfg
+
+        self._cpn = self._cfg['cpn']
+        self._gpn = self._cfg['gpn']
 
         self._nodes = list()
         for ni in range(self._nnodes):
@@ -40,7 +46,9 @@ class RM_LFS(object):
 
         for i in range(nnodes):
             uid, cpn, gpn = self._nodes[i]
-            nodes.append([str(uid), [FREE] * cpn, [FREE] * gpn])
+            # FIXME: get name from nodelist
+            nodes.append([str(uid), 'node_%s' % uid, 
+                         [FREE] * cpn, [FREE] * gpn])
 
         return nodes
 

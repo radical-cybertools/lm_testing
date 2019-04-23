@@ -1,9 +1,13 @@
 
+import pprint
+
 
 # ------------------------------------------------------------------------------
 #
 class LM(object):
 
+    # --------------------------------------------------------------------------
+    #
     @staticmethod
     def create(launcher, nodes):
 
@@ -20,6 +24,15 @@ class LM(object):
               'orte'     : LM_ORTE}[launcher]
 
         return lm(nodes)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def dump_task(self, task):
+
+        fsh = '%s/%s.json'  % (task['pwd'], task['uid'])
+        with open(fsh, 'w') as f:
+            f.write('\n%s\n\n' % pprint.pformat(task))
 
 
 # ------------------------------------------------------------------------------

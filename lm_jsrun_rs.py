@@ -1,10 +1,12 @@
 
 import os 
 
+from lm import LM
+
 
 # ------------------------------------------------------------------------------
 #
-class LM_JSRUN_RS(object):
+class LM_JSRUN_RS(LM):
 
     # --------------------------------------------------------------------------
     #
@@ -32,6 +34,7 @@ class LM_JSRUN_RS(object):
 
         tid    = task['uid']
         exe    = task['exe']
+        args   = task['args']
         slots  = task['slots']
 
         fout   = '%s/%s.out' % (pwd, tid)
@@ -39,9 +42,10 @@ class LM_JSRUN_RS(object):
         fcmd   = '%s/%s.cmd' % (pwd, tid)
         frs    = '%s/%s.rs'  % (pwd, tid)
 
-        rs_str = ''
         rs_id  = 0
-        for node_uid, cores, gpus in slots:
+        rs_str = ''
+
+        for node_uid, node_name, cores, gpus in slots:
 
             rs_str += 'RS %d: {'  % rs_id
             rs_str += ' host: %d' % (int(node_uid) + 1)
@@ -53,12 +57,15 @@ class LM_JSRUN_RS(object):
         with open(frs, 'w') as f:
             f.write('\n%s\n' % rs_str)
 
-        cmd = 'jsrun -a 1 -U %s %s 1>%s 2>%s' % (frs, exe, fout, ferr)
+        task['cmd'] = 'jsrun -a 1 -U %s %s %s 1>%s 2>%s' \
+                    % (frs, exe, args, fout, ferr)
 
         with open(fcmd, 'w') as f:
-            f.write('\n%s\n' % cmd)
+            f.write('\n%s\n' % task['cmd'])
 
-        return cmd
+        self.dump_task(task)
+
+        return task['cmd']
 
 
 # ------------------------------------------------------------------------------

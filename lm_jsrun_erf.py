@@ -1,9 +1,11 @@
 
 import os 
 
+from lm import LM
+
 
 # ------------------------------------------------------------------------------
-class LM_JSRUN_ERF(object):
+class LM_JSRUN_ERF(LM):
 
     # --------------------------------------------------------------------------
     #
@@ -31,6 +33,7 @@ class LM_JSRUN_ERF(object):
 
         tid     = task['uid']
         exe     = task['exe']
+        args    = task['args']
         slots   = task['slots']
 
         fout    = '%s/%s.out' % (pwd, tid)
@@ -38,11 +41,10 @@ class LM_JSRUN_ERF(object):
         fcmd    = '%s/%s.cmd' % (pwd, tid)
         ferf    = '%s/%s.erf'  % (pwd, tid)
 
-
+        rank    = 0
         erf_str = '\ncpu_index_using: physical\n'
-        rank = 0
 
-        for node_uid, cores, gpus in slots:
+        for node_uid, node_name, cores, gpus in slots:
 
             cores = [str(c) for c in cores]
             gpus  = [str(g) for g in gpus ]
@@ -59,12 +61,15 @@ class LM_JSRUN_ERF(object):
         with open(ferf, 'w') as f:
             f.write('\n%s\n' % erf_str)
 
-        cmd = 'jsrun --erf_input %s %s 1>%s 2>%s' % (ferf, exe, fout, ferr)
+        task['cmd'] = 'jsrun --erf_input %s %s %s 1>%s 2>%s' \
+                    % (ferf, exe, args, fout, ferr)
 
         with open(fcmd, 'w') as f:
-            f.write('\n%s\n' % cmd)
+            f.write('\n%s\n' % task['cmd'])
 
-        return cmd
+        self.dump_task(task)
+
+        return task['cmd']
 
 
 # ------------------------------------------------------------------------------

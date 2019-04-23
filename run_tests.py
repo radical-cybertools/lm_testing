@@ -17,45 +17,13 @@ from lm  import LM   # launch methods
 from rm  import RM   # resource managers
 
 from constants import FREE, BUSY
-from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED
+from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED, MISPLACED
 
 
 _doc    = open('./README.md', 'r') \
               .read() \
               .replace('### ', '')
 __doc__ = re.sub(r'^\s*```.*$\n', '', _doc, flags=re.MULTILINE)
-
-
-# ------------------------------------------------------------------------------
-#
-def create_nodes(pwd, tc):
-    ''''
-    create a list of nodes (with core and gpu slots) which we can use to place
-    tasks.  The returned list has the following structure:
-
-        [ 
-            [node_id, [cores]. [gpus]],  
-            [node_id, [cores]. [gpus]], 
-            ...
-        ]
-
-    where:
-
-      node_id: integer, 0-based
-      cores  : list of bools, one per core, where `BUSY` indicates a used core
-      gpus   : list of bools, one per core, where `BUSY` indicates a used gpu
-
-    All cores and gpus are initially not used.
-
-    NOTE: this uses logical node IDs, the physical node names are not known at
-    this point.
-    '''
-
-    nodes = list()
-    for n in range(tc['nodes']):
-        nodes.append([str(n), [FREE] * tc['cpn'], [FREE] * tc['gpn']])
-
-    return nodes
 
 
 # ------------------------------------------------------------------------------
@@ -100,16 +68,14 @@ def create_tasks(tc, pwd):
 
         task = {'uid'     : 'task.%06d' % tid, 
                 'exe'     : tc['exe'],
+                'args'    : 0,  # FIXME: workload
+                'pwd'     : pwd,
                 'n_procs' : n_procs,
                 'n_gpus'  : n_gpus,
                 'n_cores' : n_cores,
                 'procs'   : [[n_cores, n_gpus] for _ in range(n_procs)],
                 'state'   : NEW
                }
-
-        fsh = '%s/%s.json'  % (pwd, task['uid'])
-        with open(fsh, 'w') as f:
-            f.write('\n%s\n\n' % pprint.pformat(task))
 
         tasks.append(task)
 
@@ -132,7 +98,7 @@ def find_slot(nodes, n_cores, n_gpus):
     '''
 
     # iterate through node list
-    for node_uid, cores, gpus in nodes:
+    for node_uid, node_name, cores, gpus in nodes:
 
         core_ids = list()
         gpu_ids  = list()
@@ -163,7 +129,7 @@ def find_slot(nodes, n_cores, n_gpus):
             for cid in core_ids: cores[cid] = BUSY
             for gid in gpu_ids : gpus [gid] = BUSY
 
-            return node_uid, core_ids, gpu_ids
+            return node_uid, node_name, core_ids, gpu_ids
 
     # nothing found
     return None
@@ -173,7 +139,7 @@ def find_slot(nodes, n_cores, n_gpus):
 #
 # create list of jsrun resource file according to test case
 #
-def schedule_tasks(tc, nodes, tasks):
+def schedule_tasks(tc, rm, nodes, tasks):
     '''
     the given tasks will be expanded by a `slots` key, which will contain a list
     of tuples of the form
@@ -191,8 +157,8 @@ def schedule_tasks(tc, nodes, tasks):
     scheduled = list()
     waiting   = list()
 
-    cpn = tc['cpn']
-    gpn = tc['gpn']
+    cpn = rm.cpn
+    gpn = rm.gpn
 
     for task in tasks:
 
@@ -251,13 +217,13 @@ def set_slots(nodes, slots, state):
         # FIXME: optimization: instead of searching for
         #        the node_uid, store the node_idx for lookups.
         ok = False
-        for node_uid, cores, gpus in nodes:
+        for node_uid, node_name, cores, gpus in nodes:
 
             if slot[0] != node_uid:
                 continue
 
-            for cidx in slot[1]: cores[cidx] = state
-            for gidx in slot[2]: gpus [gidx] = state
+            for cidx in slot[2]: cores[cidx] = state
+            for gidx in slot[3]: gpus [gidx] = state
 
             ok = True
             break  # this slot is set
@@ -277,7 +243,7 @@ def unschedule_tasks(nodes, tasks):
 
     for task in tasks:
 
-        assert(task['state'] in [DONE, FAILED])
+        assert(task['state'] in [DONE, MISPLACED, FAILED])
 
         set_slots(nodes, task['slots'], FREE)
 
@@ -343,7 +309,7 @@ def wait_tasks(nodes, running):
 
 # ------------------------------------------------------------------------------
 #
-def run_tc(rmgr, launcher, visualizer, tc, pwd):
+def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
     '''
     For the given set of tasks, do the following:
 
@@ -355,7 +321,7 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
     attempted when some other task finished and frees resources
     '''
 
-    rm = RM.create(rmgr)
+    rm = RM.create(rmgr, tgt)
 
     # prepare node list, create ctasks for this tc
     nodes = rm.get_nodes(tc)
@@ -365,7 +331,7 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
     lm = None  # launch method
 
     try:
-        v = VIZ.create(visualizer, nodes, tc['cpn'], tc['gpn'], tasks)
+        v = VIZ.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
         v.header('text case: %s [ %s ]' % (tc['uid'], launcher))
         v.update()
 
@@ -395,7 +361,7 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
             # are there any tasks waiting, and do we have resources?
             if first or collected:
                 first = False
-                scheduled, waiting = schedule_tasks(tc, nodes, waiting)
+                scheduled, waiting = schedule_tasks(tc, rm, nodes, waiting)
                 v.update()
 
             # execute scheduled tasks
@@ -411,6 +377,73 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
     finally:
         if v : v .close()
         if lm: lm.close()
+
+
+    # once done, we check all DONE tasks if their output actually meets
+    # expectations wrt. number of processes, threads, cores and GPU assignmen
+    for task in tasks:
+        if task['state'] == DONE:
+
+            request = dict()
+            for n, slot in enumerate(task['slots']):
+                cpus = ''
+                for cid in range(rm.cpn):
+                    if cid in slot[2]:
+                        cpus = '1%s' % cpus
+                    else:
+                        cpus = '0%s' % cpus
+
+                gpus = ''
+                for gid in range(rm.gpn):
+                    if gid in slot[3]:
+                        gpus = '1%s' % gpus
+                    else:
+                        gpus = '0%s' % gpus
+                request[n] = {
+                              'CPUS'   : cpus,
+                              'GPUS'   : gpus, 
+                              'NODE'   : slot[1], 
+                              'RANK'   : n, 
+                              'THREADS': len(slot[2]), 
+                             }
+
+            result = dict()
+            for line in open('%s/%s.out' %  (pwd, task['uid']), 'r').readlines():
+                rank, key, val = line.split(':')
+                rank = int(rank.strip())
+                key  = str(key.strip())
+                val  = str(val.strip())
+                if rank not in result:
+                    result[rank]  = dict()
+                if key in ['THREADS', 'RANK']:
+                    result[rank][key] = int(val)
+                else:
+                    result[rank][key] = val
+
+            ranks_1 = sorted(request.keys())
+            ranks_2 = sorted(result.keys())
+            if ranks_1 != ranks_2:
+                err = 'rank mismatch (%d != %d)' % (ranks_1, ranks_2)
+                task['state'] = MISPLACED
+
+            else:
+                err = None
+                for proc in request:
+                    for key in ['CPUS', 'GPUS', 'NODE', 'RANK', 'THREADS']:
+                        val_1 =str(request[proc][key])
+                        val_2 =str(result [proc][key])
+                        if val_1 != val_2:
+                            task['state'] = MISPLACED
+                            print '%s  %s   ' % (val_1, val_2),
+                            err = '-- %s: %s != %s' % (key, val_1, val_2)
+                    if err:
+                        print
+                      # print '%s: %s' % (proc, err)
+                      # print request[proc]
+                      # print result[proc]
+                        task['state'] = MISPLACED
+                        break
+
 
     # summary:
     summary = '%s %s ' % (tc['uid'], launcher)
@@ -442,7 +475,7 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
 
 
     if not tasks:
-        summary += '0 0 0 0 0 0 0'
+        summary += '0 0 0 0 0 0 0 0'
 
     else:
         t_total     = len(tasks)
@@ -452,10 +485,11 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
         t_running   = len([1 for t in tasks if t['state'] == RUNNING])
         t_done      = len([1 for t in tasks if t['state'] == DONE])
         t_failed    = len([1 for t in tasks if t['state'] == FAILED])
+        t_misplaced = len([1 for t in tasks if t['state'] == MISPLACED])
 
-        summary += '%d %d %d %d %d %d %d ' \
-                % (t_total, t_new, t_waiting, t_scheduled, 
-                   t_running, t_done, t_failed)
+        summary += '%d %d %d %d %d %d %d %d' \
+                % (t_total,   t_new,  t_waiting, t_scheduled, 
+                   t_running, t_done, t_failed,  t_misplaced)
 
     return summary
 
@@ -465,13 +499,15 @@ def run_tc(rmgr, launcher, visualizer, tc, pwd):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(usage=__doc__, add_help=False)
-    parser.add_argument('-h', '--help',             action='store_true')
-    parser.add_argument('-tc','--test-cases',       nargs='+', default='all')
-    parser.add_argument('-lm','--launch-methods',   nargs='+', default=['fork'],
+    parser.add_argument('-h',  '--help',             action='store_true')
+    parser.add_argument('-tc', '--test-cases',       nargs='+', default='all')
+    parser.add_argument('-lm', '--launch-methods',   nargs='+', default=['fork'],
                         choices=['fork', 'jsrun_rs', 'jsrun_erf', 'prrte', 'orte'])
-    parser.add_argument('-rm','--resource-manager', nargs=1,   default=['fork'],
+    parser.add_argument('-rm', '--resource-manager', nargs=1,   default=['fork'],
                         choices=['fork', 'lfs'])
-    parser.add_argument('-v','--visualizer',        nargs=1,   default=['text'],
+    parser.add_argument('-tgt','--target-host',      nargs=1,   default=['local'],
+                        choices=['local', 'summit', 'summitdev'])
+    parser.add_argument('-v',  '--visualizer',       nargs=1,   default=['text'],
                         choices=['curses', 'simple', 'text', 'mute'])
     args = parser.parse_args()
 
@@ -482,6 +518,7 @@ if __name__ == '__main__':
     visualizer = args.visualizer[0]
     launchers  = args.launch_methods
     rmgr       = args.resource_manager[0]
+    tgt        = args.target_host[0]
     tc_names   = args.test_cases
 
     if tc_names == 'all':
@@ -522,12 +559,15 @@ if __name__ == '__main__':
                     continue
 
                 try:
-                    summary = run_tc(rmgr, launcher, visualizer, tc, pwd)
+                    summary = run_tc(rmgr, tgt, launcher, visualizer, tc, pwd)
                     fout.write('%s\n' % summary)
 
-                except Exception as e:
-                    print '\nfail test case %s [%s]: %s\n' \
-                        % (tc['uid'], launcher, repr(e))
+                finally:
+                    pass
+              # except Exception as e:
+              #     print '\nfail test case %s [%s]: %s\n' \
+              #         % (tc['uid'], launcher, repr(e))
+              #     raise
 
 
 # ------------------------------------------------------------------------------
