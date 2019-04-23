@@ -26,8 +26,19 @@ class RM_LFS(RM):
         self._gpn = self._cfg['gpn']
 
         self._nodes = list()
-        for ni in range(self._nnodes):
-            self._nodes.append(['node_%04d' % ni, self._cpn, self._gpn])
+        
+        # filter batch node (localhost) from the node list
+        localhost = socket.gethostname().split('.')[0]
+
+        hosts = set()
+        with open(os.environ['LSB_DJOB_HOSTFILE'], 'r') as fin:
+            for line in fin.readlines():
+                host = line.strip()
+                if host != localhost:
+                    hosts.add(host)
+
+        for host in hosts:
+            self._nodes.append([host, self._cpn, self._gpn])
 
 
     # --------------------------------------------------------------------------
@@ -40,9 +51,9 @@ class RM_LFS(RM):
         nnodes = tc['nodes']
         nodes  = list()
 
-        if nnodes > self._nnodes:
+        if nnodes > len(self._nodes):
             raise ValueError('insufficient nodes: %d > %d'
-                            % (nnodes, self._nnodes))
+                            % (nnodes, len(self._nodes)))
 
         for i in range(nnodes):
             uid, cpn, gpn = self._nodes[i]

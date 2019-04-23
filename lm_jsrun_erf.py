@@ -11,7 +11,8 @@ class LM_JSRUN_ERF(LM):
     #
     def __init__(self, nodes):
 
-        pass
+        self._nodes = nodes
+        self._nuids = [node[0] for node in self._nodes]
 
 
     # --------------------------------------------------------------------------
@@ -49,7 +50,7 @@ class LM_JSRUN_ERF(LM):
             cores = [str(c) for c in cores]
             gpus  = [str(g) for g in gpus ]
 
-            node_uid = int(node_uid) + 1
+            node_uid = self._nuids.index(node_uid) + 1
             erf_str += 'rank: %d: {host: %d' % (rank, node_uid)
             if cores: erf_str += '; cpu: {%s}' % ','.join(cores)
             if gpus : erf_str += '; gpu: {%s}' % ','.join(gpus)
