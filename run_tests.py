@@ -423,7 +423,7 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
             ranks_1 = sorted(request.keys())
             ranks_2 = sorted(result.keys())
             if ranks_1 != ranks_2:
-                err = 'rank mismatch (%d != %d)' % (ranks_1, ranks_2)
+                err = 'rank mismatch (%s != %s)' % (ranks_1, ranks_2)
                 task['state'] = MISPLACED
 
             else:

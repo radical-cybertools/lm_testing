@@ -14,7 +14,7 @@ class RM_LFS(RM):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self):
+    def __init__(self, tgt, cfg):
 
         self._nnodes   = 1  # TODO: make configurable for debug purposes
         self._hostname = socket.gethostname()

@@ -23,10 +23,10 @@ class LM_PRRTE(LM):
         fhosts = 'prrte.hosts'
 
         with open(fhosts, 'w') as fout:
-            for node_uid, cores, gpus in nodes:
+            for node_uid, node_name, cores, gpus in nodes:
                 fout.write('%s slots=%d\n' % (node_uid, len(cores)))
 
-        pre  = os.environ['PRRTE_PREFIX']
+        pre  = os.environ['PRRTE_DIR']
         prte = '%s/bin/prte --prefix %s' % (pre, pre)
         cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
                % (prte, furi, fhosts, flog)
