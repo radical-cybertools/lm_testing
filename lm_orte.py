@@ -4,9 +4,11 @@ import time
 
 import subprocess as sp
 
+from lm import LM
+
 
 # ------------------------------------------------------------------------------
-class LM_ORTE(object):
+class LM_ORTE(LM):
 
     # --------------------------------------------------------------------------
     #
@@ -87,15 +89,17 @@ class LM_ORTE(object):
         For the given task, prepare a orterun command line to execute that task.
         '''
 
-        exe   = task['exe']
         tid   = task['uid']
+        exe   = task['exe']
+        args  = task['args']
         slots = task['slots']
 
         fout  = '%s/%s.out' % (pwd, tid)
         ferr  = '%s/%s.err' % (pwd, tid)
 
         hosts = list()
-        for node_uid, cores, gpus in slots:
+
+        for node_uid, node_name, cores, gpus in slots:
 
             for _ in cores: hosts.append(node_uid)
             for _ in gpus : hosts.append(node_uid)
@@ -104,10 +108,12 @@ class LM_ORTE(object):
         np_flag  = '-np %s' % len(hosts)
         map_flag = '--bind-to none'
 
-        cmd  = 'orterun --hnp "%s" %s %s -host %s %s 1>%s 2>%s' \
-             % (self._dvm_uri, np_flag, map_flag, host_str, exe, fout, ferr)
+        task['cmd'] = 'orterun --hnp "%s" %s %s -host %s %s %s 1>%s 2>%s' \
+            % (self._dvm_uri, np_flag, map_flag, host_str, exe, args, fout, ferr)
 
-        return cmd
+        self.dump_task(task)
+
+        return task['cmd']
 
 
 # ------------------------------------------------------------------------------

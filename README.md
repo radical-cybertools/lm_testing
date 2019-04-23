@@ -1,7 +1,7 @@
 
 ### Usage:  
 
-        run_test.py [-tc TC ...] [-lm LM ...] [-rm RM] [-viz VIZ] [-h]
+        run_tests.py [-tc TC ...] [-lm LM ...] [-rm RM] [-tgt T] [-viz VIZ] [-h]
 
    This script consumes a set of test cases (test_cases/tc_*.json).
    For each test case, it will create a workload as described, and
@@ -73,6 +73,10 @@
         -rm RM           : select the local resource manager
                            available: fork, lsf
                            default  : fork
+        --target-host     
+        -tgt host        : select the target host configuration
+                           available: local, summit, summitdev (tgt_<name>.cfg)
+                           default  : local
         --visualizer
         -v  VIZ          : select visualization methods
                            available: curses, simple, text, mute (off)
@@ -122,7 +126,7 @@
 
 ```sh
         > rm -r scratch/fork/tc_1/   # remove test scratch dir
-        > ./run_test.py -lm fork -tc test_cases/tc_1.json
+        > ./run_tests.py -lm fork -tc test_cases/tc_1.json
 
          ----------------------------------------------------------------
          text case: tc_1 [ fork ]

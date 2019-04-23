@@ -1,8 +1,6 @@
 
 {
     "nodes"     : 1, 
-    "cpn"       : 40,
-    "gpn"       : 6, 
 
     "procs"     : 1,
     "threads"   : 1,
