@@ -17,6 +17,7 @@ test -z "$MPI_RANK" && MPI_RANK="0"
 THREAD_NUM=""
 test -z "$THREAD_NUM" && THREAD_NUM="$ALPS_APP_DEPTH"
 test -z "$THREAD_NUM" && THREAD_NUM="$OMP_NUM_THREADS"
+test -z "$THREAD_NUM" && THREAD_NUM="1"
 
 # obtain info about CPU pinning
 CPU_MASK=$(cat /proc/$PID/status \
@@ -26,7 +27,7 @@ CPU_MASK=$(cat /proc/$PID/status \
         | sed -e 's/,//g' \
         | tr 'a-f' 'A-F')
 
-CPU_BITS=$(echo "obase=2; ibase=16; $CPU_MASK" | \bc)
+CPU_BITS=$(echo "obase=2; ibase=16; $CPU_MASK" | \bc | tr -d '\\[:space:]')
 CPU_BLEN=$(echo $CPU_BITS | wc -c)
 CPU_NBITS=$(cat /proc/cpuinfo | grep processor | wc -l)
 while test "$CPU_BLEN" -le "$CPU_NBITS"
@@ -42,7 +43,7 @@ test -z "$GPU_INFO" && GPU_INFO="$CUDA_VISIBLE_DEVICES"
 test -z "$GPU_INFO" && GPU_INFO="$GPU_DEVICE_ORDINAL"
 GPU_INFO=$(echo " $GPU_INFO " | tr ',' ' ')
 
-GPU_NBITS=$(lspci | grep " VGA " | wc -l)
+GPU_NBITS=$(/usr/sbin/lspci | grep " VGA " | wc -l)
 GPU_BITS=''
 n=0
 while test "$n" -lt "$GPU_NBITS"
@@ -62,13 +63,13 @@ done
 PREFIX="$MPI_RANK"
 test -z "$PREFIX" && PREFIX='0'
 
-# echo "$PREFIX : PID     : $PID"
+# printf "$PREFIX : PID     : $PID\n"
 
-echo "$PREFIX : NODE    : $NODE"
-echo "$PREFIX : CPUS    : $CPU_BITS"
-echo "$PREFIX : GPUS    : $GPU_BITS"
-echo "$PREFIX : RANK    : $MPI_RANK"
-echo "$PREFIX : THREADS : $THREAD_NUM"
+printf "$PREFIX : NODE    : $NODE\n"
+printf "$PREFIX : CPUS    : $CPU_BITS\n"
+printf "$PREFIX : GPUS    : $GPU_BITS\n"
+printf "$PREFIX : RANK    : $MPI_RANK\n"
+printf "$PREFIX : THREADS : $THREAD_NUM\n"
 
 # if so requested, sleep for a bit
 test -z "$ARG" || sleep $ARG
