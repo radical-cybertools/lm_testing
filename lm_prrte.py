@@ -24,7 +24,7 @@ class LM_PRRTE(LM):
 
         with open(fhosts, 'w') as fout:
             for node_uid, node_name, cores, gpus in nodes:
-                fout.write('%s slots=%d\n' % (node_uid, len(cores)))
+                fout.write('%s slots=%d\n' % (node_name, len(cores)))
 
         pre  = os.environ['PRRTE_DIR']
         prte = '%s/bin/prte --prefix %s' % (pre, pre)
@@ -109,12 +109,13 @@ class LM_PRRTE(LM):
 
         for node_uid, node_name, cores, gpus in slots:
 
-            for _ in cores: hosts.append(node_uid)
-            for _ in gpus : hosts.append(node_uid)
+            for _ in cores: hosts.append(node_name)
+            for _ in gpus : hosts.append(node_name)
 
         host_str = ','.join(hosts)
         np_flag  = '-np %s' % len(hosts)
-        map_flag = '--bind-to none'
+        map_flag = '--report-bindings'
+      # map_flag = '--bind-to none'
 
         task['cmd'] = 'prun --hnp "%s" %s %s -host %s %s %s 1>%s 2>%s' \
             % (self._dvm_uri, np_flag, map_flag, host_str, exe, args, fout, ferr)
