@@ -27,7 +27,7 @@ class LM_PRRTE(LM):
                 fout.write('%s slots=%d\n' % (node_name, len(cores)))
 
         pre  = os.environ['PRRTE_DIR']
-        prte = '%s/bin/prte --prefix %s' % (pre, pre)
+        prte = '%s/bin/prte --prefix %s --mca plm_rsh_no_tree_spawn 1' % (pre, pre)
         cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
                % (prte, furi, fhosts, flog)
 
@@ -114,8 +114,7 @@ class LM_PRRTE(LM):
 
         host_str = ','.join(hosts)
         np_flag  = '-np %s' % len(hosts)
-        map_flag = '--report-bindings'
-      # map_flag = '--bind-to none'
+        map_flag = '--report-bindings --bind-to hwthread:overload-allowed'
 
         task['cmd'] = 'prun --hnp "%s" %s %s -host %s %s %s 1>%s 2>%s' \
             % (self._dvm_uri, np_flag, map_flag, host_str, exe, args, fout, ferr)

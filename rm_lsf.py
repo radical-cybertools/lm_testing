@@ -58,7 +58,6 @@ class RM_LSF(RM):
         for i in range(nnodes):
             uid, node, cpn, gpn = self._nodes[i]
             nodes.append([uid, node, [FREE] * cpn, [FREE] * gpn])
-            print node
 
         return nodes
 

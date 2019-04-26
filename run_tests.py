@@ -363,7 +363,7 @@ def wait_tasks(nodes, running):
                             val_2 = str(result [proc][key])
                             if val_1 != val_2:
                                 task['state'] = MISPLACED
-                              # print '%s  %s   ' % (val_1, val_2),
+                                print '\n%s\n%s\n' % (val_1, val_2),
                                 err = '-- %s: %s != %s' % (key, val_1, val_2)
                         if err:
                           # print
@@ -408,7 +408,14 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
 
     try:
         v = VIZ.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
-        v.header('text case: %s [ %s ]' % (tc['uid'], launcher))
+        v.header('test case: %s [ %s ]' % (tc['uid'], launcher))
+
+        v.text(None)  # reset text part
+        v.text('nodes  : %s' % tc['nodes'])
+        v.text('procs  : %s' % tc['procs'])
+        v.text('threads: %s' % tc['threads'])
+        v.text('gpus   : %s' % tc['gpus'])
+        v.text('tasks  : %s' % tc['tasks'])
         v.update()
 
         lm = LM.create(launcher, nodes)
@@ -572,12 +579,9 @@ if __name__ == '__main__':
                     summary = run_tc(rmgr, tgt, launcher, visualizer, tc, pwd)
                     fout.write('%s\n' % summary)
 
-                finally:
-                    pass
-              # except Exception as e:
-              #     print '\nfail test case %s [%s]: %s\n' \
-              #         % (tc['uid'], launcher, repr(e))
-              #     raise
+                except Exception as e:
+                    print '\nfail test case %s [%s]: %s\n' \
+                        % (tc['uid'], launcher, repr(e))
 
 
 # ------------------------------------------------------------------------------
