@@ -1,0 +1,12 @@
+
+{
+    "nodes"     : 10,
+
+    "procs"     : 4,
+    "threads"   : 1,
+    "gpus"      : 0,
+    "tasks"     : 10240,
+    "exe"       : "$(pwd -P)/lm_task.sh",
+    "args"      : "0"
+}
+
