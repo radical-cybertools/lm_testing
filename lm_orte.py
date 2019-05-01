@@ -116,5 +116,16 @@ class LM_ORTE(LM):
         return task['cmd']
 
 
+    # --------------------------------------------------------------------------
+    #
+    def finalize_task(self, pwd, task):
+        '''
+        cleanup after the given task completed
+        '''
+
+        # avoid overloading of the DVM
+        time.sleep(0.1)
+
+
 # ------------------------------------------------------------------------------
 

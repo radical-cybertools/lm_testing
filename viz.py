@@ -151,7 +151,7 @@ if use_curses:
 
 # ------------------------------------------------------------------------------
 #
-class VIZ(object):
+class Viz(object):
 
     # --------------------------------------------------------------------------
     #
@@ -172,9 +172,24 @@ class VIZ(object):
         return viz(nodes, cpn, gpn, tasks, chunk)
 
 
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self):
+
+        self._t_zero = time.time()
+
+
+
+    # --------------------------------------------------------------------------
+    #
+    def now(self):
+
+        return time.time() - self._t_zero
+
+
 # ------------------------------------------------------------------------------
 #
-class VizCurses(object):
+class VizCurses(Viz):
 
     if not use_curses:
         pass
@@ -183,6 +198,8 @@ class VizCurses(object):
         # ----------------------------------------------------------------------
         #
         def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+
+            Viz.__init__(self)
     
             self._screen = Screen.open()
             self._msg    = 'FOO'
@@ -259,11 +276,13 @@ class VizCurses(object):
 
 # ------------------------------------------------------------------------------
 #
-class VizSimple(object):
+class VizSimple(Viz):
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+
+        Viz.__init__(self)
 
         self._nodes = nodes
         self._tasks = tasks
@@ -365,11 +384,13 @@ class VizSimple(object):
 
 # ------------------------------------------------------------------------------
 #
-class VizText(object):
+class VizText(Viz):
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+
+        Viz.__init__(self)
 
         self._nodes = nodes
         self._tasks = tasks
@@ -381,7 +402,7 @@ class VizText(object):
         self._old_data = ''
         self._iter     = 0
 
-        self._header = ' ||  cores |   busy |   free ||   gpus |   busy |   free |' \
+        self._header = ' ||  time [s] ||  cores |   busy |   free ||   gpus |   busy |   free |' \
                      + '|  tasks |    new |   wait |  sched |    run |   done |   fail | xplace ||' 
 
 
@@ -421,13 +442,13 @@ class VizText(object):
 
         for node in self._nodes:
 
-            c_total += len(node[1])
-            c_busy  += node[1].count(BUSY)
-            c_free  += node[1].count(FREE)
+            c_total += len(node[2])
+            c_busy  += node[2].count(BUSY)
+            c_free  += node[2].count(FREE)
 
-            g_total += len(node[2])
-            g_busy  += node[2].count(BUSY)
-            g_free  += node[2].count(FREE)
+            g_total += len(node[3])
+            g_busy  += node[3].count(BUSY)
+            g_free  += node[3].count(FREE)
 
         t_total     = len(self._tasks)
         t_new       = len([1 for t in self._tasks if t['state'] == NEW])
@@ -438,8 +459,8 @@ class VizText(object):
         t_failed    = len([1 for t in self._tasks if t['state'] == FAILED])
         t_misplaced = len([1 for t in self._tasks if t['state'] == MISPLACED])
 
-        data  = ' || %6d | %6d | %6d || %6d | %6d | %6d |' \
-            % (c_total, c_busy, c_free, g_total, g_busy, g_free)
+        data  = ' || %9.2f || %6d | %6d | %6d || %6d | %6d | %6d |' \
+            % (self.now(), c_total, c_busy, c_free, g_total, g_busy, g_free)
 
         data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
               % (t_total, t_new, t_waiting, t_scheduled,
@@ -460,7 +481,7 @@ class VizText(object):
 
 # ------------------------------------------------------------------------------
 #
-class VizMute(object):
+class VizMute(Viz):
 
     # --------------------------------------------------------------------------
     #

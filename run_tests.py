@@ -12,7 +12,7 @@ import argparse
 
 import subprocess as sp
 
-from viz import VIZ  # visualizers
+from viz import Viz  # visualizers
 from lm  import LM   # launch methods
 from rm  import RM   # resource managers
 
@@ -70,7 +70,7 @@ def create_tasks(tc, pwd):
 
         task = {'uid'     : 'task.%06d' % tid, 
                 'exe'     : tc['exe'],
-                'args'    : 0,  # FIXME: workload
+                'args'    : tc['args'],
                 'pwd'     : pwd,
                 'n_procs' : n_procs,
                 'n_gpus'  : n_gpus,
@@ -303,7 +303,7 @@ def execute_tasks(lm, pwd, scheduled):
 
 # ------------------------------------------------------------------------------
 #
-def wait_tasks(nodes, running):
+def wait_tasks(lm, pwd, nodes, running):
     '''
     For the given set of tasks, poll the task processes and check if they are
     done.  If so, collect the return value.  For each completed task, free the
@@ -325,9 +325,14 @@ def wait_tasks(nodes, running):
 
         if task['ret'] is None:
             still_running.append(task)
+
         else:
             if task['ret']: task['state'] = FAILED
             else          : task['state'] = DONE
+
+            # clean up
+         #  lm.finalize_task(pwd, task)
+
 
             if task['state'] == DONE:
 
@@ -363,7 +368,7 @@ def wait_tasks(nodes, running):
                             val_2 = str(result [proc][key])
                             if val_1 != val_2:
                                 task['state'] = MISPLACED
-                                print '\n%s\n%s\n' % (val_1, val_2),
+                              # print '\n%s\n%s\n' % (val_1, val_2),
                                 err = '-- %s: %s != %s' % (key, val_1, val_2)
                         if err:
                           # print
@@ -376,6 +381,11 @@ def wait_tasks(nodes, running):
 
 
             collected.append(task)
+
+    if collected:
+
+        time.sleep(0.1)
+
 
     # free resources
     unschedule_tasks(nodes, collected)
@@ -407,7 +417,7 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
     lm = None  # launch method
 
     try:
-        v = VIZ.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
+        v = Viz.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
         v.header('test case: %s [ %s ]' % (tc['uid'], launcher))
 
         v.text(None)  # reset text part
@@ -436,7 +446,7 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
             v.update()
 
             # are there any tasks to collect / resources to be freed?
-            running, collected = wait_tasks(nodes, running)
+            running, collected = wait_tasks(lm, pwd, nodes, running)
             done += collected
 
             v.update()

@@ -70,5 +70,16 @@ class LM_JSRUN_RS(LM):
         return task['cmd']
 
 
+    # --------------------------------------------------------------------------
+    #
+    def finalize_task(self, pwd, task):
+        '''
+        cleanup after the given task completed
+        '''
+
+        # avoid overloading the system
+        time.sleep(0.1)
+
+
 # ------------------------------------------------------------------------------
 

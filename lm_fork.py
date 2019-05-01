@@ -58,5 +58,15 @@ class LM_FORK(LM):
         return task['cmd']
 
 
+    # --------------------------------------------------------------------------
+    #
+    def finalize_task(self, pwd, task):
+        '''
+        cleanup after the given task completed
+        '''
+
+        pass
+
+
 # ------------------------------------------------------------------------------
 
