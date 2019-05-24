@@ -10,15 +10,15 @@ try:
     from asciimatics.screen     import Screen
     use_curses = True
 except ImportError:
-    sys.stderr.write('\nwarning: could not load asciimatics - disable curses\n\n')
     use_curses = False
 
 
 from constants import FREE, BUSY
-from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED
+from constants import NEW, WAITING, SCHEDULED, RUNNING, DONE, FAILED, MISPLACED
 
 
 if use_curses:
+
     # ------------------------------------------------------------------------------
     #
     class TextBox(DynamicRenderer):
@@ -111,7 +111,8 @@ if use_curses:
                         SCHEDULED : [SCHEDULED, (Screen.COLOUR_GREEN,  0)],
                         RUNNING   : [RUNNING  , (Screen.COLOUR_GREEN,  0)],
                         DONE      : [DONE     , (Screen.COLOUR_GREEN,  0)],
-                        FAILED    : [FAILED   , (Screen.COLOUR_GREEN,  0)]}
+                        FAILED    : [FAILED   , (Screen.COLOUR_GREEN,  0)],
+                        MISPLACED : [MISPLACED, (Screen.COLOUR_GREEN,  0)]}
 
 
         # --------------------------------------------------------------------------
@@ -150,12 +151,18 @@ if use_curses:
 
 # ------------------------------------------------------------------------------
 #
-class VIZ(object):
+class Viz(object):
 
     # --------------------------------------------------------------------------
     #
     @staticmethod
     def create(viztype, nodes, cpn, gpn, tasks, chunk=128):
+
+        if viztype == 'curses' and not use_curses:
+            sys.stdout.write('non asciimatics, fall back to simple viz\n')
+            sys.stdout.flush()
+            time.sleep(1)
+            viztype = 'text'
 
         viz = {'curses': VizCurses,
                'simple': VizSimple,
@@ -165,86 +172,117 @@ class VIZ(object):
         return viz(nodes, cpn, gpn, tasks, chunk)
 
 
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self):
+
+        self._t_zero = time.time()
+
+
+
+    # --------------------------------------------------------------------------
+    #
+    def now(self):
+
+        return time.time() - self._t_zero
+
+
 # ------------------------------------------------------------------------------
 #
-class VizCurses(object):
+class VizCurses(Viz):
 
-    # --------------------------------------------------------------------------
-    #
-    def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+    if not use_curses:
+        pass
 
-        self._screen = Screen.open()
-        self._msg    = 'FOO'
+    else:
+        # ----------------------------------------------------------------------
+        #
+        def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
 
-        try:
-            self._header  = TextBox(msg=self._msg)
-            self._nodes   = NodeChart(nodes=nodes, cpn=cpn, gpn=gpn)
-            self._tasks   = TaskChart(tasks=tasks, chunk=chunk)
-            effects = [Print(self._screen, self._header, x=1, y=1),
-                       Print(self._screen, self._nodes,  x=1, y=4),
-                       Print(self._screen, self._tasks,  x=1, y=3 + self._nodes.height)]
-
-            self._scenes = [Scene(effects, -1)]
-            self._screen.set_scenes(self._scenes)
-
-        except Exception:
-            self._screen.close()
-            self._screen = None
-            raise
-
-
-    # --------------------------------------------------------------------------
-    #
-    def header(self, msg):
-
-        self._header.set(msg)
-
-
-    # --------------------------------------------------------------------------
-    #
-    def update(self):
-
-        if not self._screen:
-            return False
-
-      # try:
-        if True:
-            self._screen.draw_next_frame(repeat=False) 
-
-            event = self._screen.get_event()
-            while event:
-                for scene in self._scenes:
-                    if not event:
-                        break
-                    event = scene.handle_event(event)
+            Viz.__init__(self)
+    
+            self._screen = Screen.open()
+            self._msg    = 'FOO'
+    
+            try:
+                self._header  = TextBox(msg=self._msg)
+                self._nodes   = NodeChart(nodes=nodes, cpn=cpn, gpn=gpn)
+                self._tasks   = TaskChart(tasks=tasks, chunk=chunk)
+                effects = [Print(self._screen, self._header, x=1, y=1),
+                           Print(self._screen, self._nodes,  x=1, y=4),
+                           Print(self._screen, self._tasks,  x=1, y=3
+                                                        + self._nodes.height)]
+    
+                self._scenes = [Scene(effects, -1)]
+                self._screen.set_scenes(self._scenes)
+    
+            except Exception:
+                self._screen.close()
+                self._screen = None
+                raise
+    
+    
+        # ----------------------------------------------------------------------
+        #
+        def header(self, msg):
+    
+            self._header.set(msg)
+    
+    
+        # ----------------------------------------------------------------------
+        #
+        def text(self, msg):
+    
+            pass
+    
+    
+        # ----------------------------------------------------------------------
+        #
+        def update(self):
+    
+            if not self._screen:
+                return False
+    
+          # try:
+            if True:
+                self._screen.draw_next_frame(repeat=False) 
+    
                 event = self._screen.get_event()
-            # screen.wait_for_input(1.0)
-
-            return True
-
-      # except Exception:
-      #     self._screen.close()
-      #     self._screen = None
-      #     return False
-
-
-    # --------------------------------------------------------------------------
-    #
-    def close(self):
-
-        if self._screen:
-            time.sleep(1)
-            self._screen.close()
-            self._screen = None
+                while event:
+                    for scene in self._scenes:
+                        if not event:
+                            break
+                        event = scene.handle_event(event)
+                    event = self._screen.get_event()
+                # screen.wait_for_input(1.0)
+    
+                return True
+    
+          # except Exception:
+          #     self._screen.close()
+          #     self._screen = None
+          #     return False
+    
+    
+        # ----------------------------------------------------------------------
+        #
+        def close(self):
+    
+            if self._screen:
+                time.sleep(1)
+                self._screen.close()
+                self._screen = None
 
 
 # ------------------------------------------------------------------------------
 #
-class VizSimple(object):
+class VizSimple(Viz):
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+
+        Viz.__init__(self)
 
         self._nodes = nodes
         self._tasks = tasks
@@ -254,6 +292,7 @@ class VizSimple(object):
         self._chunk = chunk
 
         self._header_out = ''
+        self._text_out   = ''
         self._nodes_out  = ''
         self._tasks_out  = ''
 
@@ -269,6 +308,17 @@ class VizSimple(object):
 
     # --------------------------------------------------------------------------
     #
+    def text(self, msg):
+
+        if not msg:
+            self._text_out = ''
+        else:
+            self._text_out += msg
+            self._text_out += '\n'
+
+
+    # --------------------------------------------------------------------------
+    #
     def update(self):
 
         nodes_flag = self._dump_nodes()
@@ -277,6 +327,7 @@ class VizSimple(object):
         if nodes_flag or tasks_flag:
           # os.system('clear')
             print self._header_out
+            print self._text_out
             print self._nodes_out
             print self._tasks_out
             print
@@ -333,11 +384,13 @@ class VizSimple(object):
 
 # ------------------------------------------------------------------------------
 #
-class VizText(object):
+class VizText(Viz):
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, nodes, cpn, gpn, tasks, chunk=128):
+
+        Viz.__init__(self)
 
         self._nodes = nodes
         self._tasks = tasks
@@ -349,8 +402,8 @@ class VizText(object):
         self._old_data = ''
         self._iter     = 0
 
-        self._header = ' ||  cores |   busy |   free ||   gpus |   busy |   free |' \
-                     + '|  tasks |    new |   wait |  sched |    run |   done |   fail ||' 
+        self._header = ' ||  time [s] ||  cores |   busy |   free ||   gpus |   busy |   free |' \
+                     + '|  tasks |    new |   wait |  sched |    run |   done |   fail | xplace ||' 
 
 
     # --------------------------------------------------------------------------
@@ -360,6 +413,14 @@ class VizText(object):
         print
         print ' ----------------------------------------------------------------'
         print ' %s' % msg
+
+
+    # --------------------------------------------------------------------------
+    #
+    def text(self, msg):
+
+        if msg:
+            print '     %s' % msg
 
 
     # --------------------------------------------------------------------------
@@ -381,13 +442,13 @@ class VizText(object):
 
         for node in self._nodes:
 
-            c_total += len(node[1])
-            c_busy  += node[1].count(BUSY)
-            c_free  += node[1].count(FREE)
+            c_total += len(node[2])
+            c_busy  += node[2].count(BUSY)
+            c_free  += node[2].count(FREE)
 
-            g_total += len(node[2])
-            g_busy  += node[2].count(BUSY)
-            g_free  += node[2].count(FREE)
+            g_total += len(node[3])
+            g_busy  += node[3].count(BUSY)
+            g_free  += node[3].count(FREE)
 
         t_total     = len(self._tasks)
         t_new       = len([1 for t in self._tasks if t['state'] == NEW])
@@ -396,13 +457,14 @@ class VizText(object):
         t_running   = len([1 for t in self._tasks if t['state'] == RUNNING])
         t_done      = len([1 for t in self._tasks if t['state'] == DONE])
         t_failed    = len([1 for t in self._tasks if t['state'] == FAILED])
+        t_misplaced = len([1 for t in self._tasks if t['state'] == MISPLACED])
 
-        data  = ' || %6d | %6d | %6d || %6d | %6d | %6d |' \
-            % (c_total, c_busy, c_free, g_total, g_busy, g_free)
+        data  = ' || %9.2f || %6d | %6d | %6d || %6d | %6d | %6d |' \
+            % (self.now(), c_total, c_busy, c_free, g_total, g_busy, g_free)
 
-        data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
+        data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
               % (t_total, t_new, t_waiting, t_scheduled,
-                 t_running ,t_done, t_failed)
+                 t_running ,t_done, t_failed, t_misplaced)
 
         if data != self._old_data:
             print data
@@ -419,7 +481,7 @@ class VizText(object):
 
 # ------------------------------------------------------------------------------
 #
-class VizMute(object):
+class VizMute(Viz):
 
     # --------------------------------------------------------------------------
     #

@@ -12,7 +12,7 @@ import argparse
 
 import subprocess as sp
 
-from viz import VIZ  # visualizers
+from viz import Viz  # visualizers
 from lm  import LM   # launch methods
 from rm  import RM   # resource managers
 
@@ -70,7 +70,7 @@ def create_tasks(tc, pwd):
 
         task = {'uid'     : 'task.%06d' % tid, 
                 'exe'     : tc['exe'],
-                'args'    : 0,  # FIXME: workload
+                'args'    : tc['args'],
                 'pwd'     : pwd,
                 'n_procs' : n_procs,
                 'n_gpus'  : n_gpus,
@@ -200,6 +200,28 @@ def schedule_tasks(tc, rm, nodes, tasks):
             task['state'] = WAITING
             waiting.append(task)
 
+        # attach a condensed form of the expected layout, for later comparison
+        task['request'] = dict()
+        for n, slot in enumerate(task['slots']):
+            cpus = ''
+            for cid in range(rm.cpn):
+                if cid in slot[2]:
+                    cpus = '1%s' % cpus
+                else:
+                    cpus = '0%s' % cpus
+
+            gpus = ''
+            for gid in range(rm.gpn):
+                if gid in slot[3]:
+                    gpus = '1%s' % gpus
+                else:
+                    gpus = '0%s' % gpus
+            task['request'][n] = {'CPUS'   : cpus,
+                                  'GPUS'   : gpus, 
+                                  'NODE'   : slot[1], 
+                                  'RANK'   : n, 
+                                  'THREADS': len(slot[2])}
+
     return scheduled, waiting
 
 
@@ -281,7 +303,7 @@ def execute_tasks(lm, pwd, scheduled):
 
 # ------------------------------------------------------------------------------
 #
-def wait_tasks(nodes, running):
+def wait_tasks(lm, pwd, nodes, running):
     '''
     For the given set of tasks, poll the task processes and check if they are
     done.  If so, collect the return value.  For each completed task, free the
@@ -303,10 +325,67 @@ def wait_tasks(nodes, running):
 
         if task['ret'] is None:
             still_running.append(task)
+
         else:
             if task['ret']: task['state'] = FAILED
             else          : task['state'] = DONE
+
+            # clean up
+         #  lm.finalize_task(pwd, task)
+
+
+            if task['state'] == DONE:
+
+                request = task['request']
+                result  = dict()
+
+                for line in open('%s/%s.out' %  (pwd, task['uid']), 'r').readlines():
+                    rank, key, val = line.split(':')
+                    rank = int(rank.strip())
+                    key  = str(key.strip())
+                    val  = str(val.strip())
+                    if rank not in result:
+                        result[rank]  = dict()
+                    if key in ['THREADS', 'RANK']:
+                        result[rank][key] = int(val)
+                    else:
+                        result[rank][key] = val
+
+                task['result'] = result
+
+                ranks_1 = sorted(request.keys())
+                ranks_2 = sorted(result.keys())
+                if ranks_1 != ranks_2:
+                    err = 'rank mismatch (%s != %s)' % (ranks_1, ranks_2)
+                    task['state'] = MISPLACED
+
+                else:
+                    err = None
+                    for proc in request:
+                        for key in ['CPUS', 'GPUS', 'NODE', 'RANK', 'THREADS']:
+                      # for key in [        'GPUS', 'NODE', 'RANK', 'THREADS']:
+                            val_1 = str(request[proc][key])
+                            val_2 = str(result [proc][key])
+                            if val_1 != val_2:
+                                task['state'] = MISPLACED
+                              # print '\n%s\n%s\n' % (val_1, val_2),
+                                err = '-- %s: %s != %s' % (key, val_1, val_2)
+                        if err:
+                          # print
+                          # print '%s: %s' % (proc, err)
+                          # print request[proc]
+                          # print result[proc]
+                            task['state'] = MISPLACED
+                            break
+
+
+
             collected.append(task)
+
+    if collected:
+
+        time.sleep(0.1)
+
 
     # free resources
     unschedule_tasks(nodes, collected)
@@ -338,8 +417,15 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
     lm = None  # launch method
 
     try:
-        v = VIZ.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
-        v.header('text case: %s [ %s ]' % (tc['uid'], launcher))
+        v = Viz.create(visualizer, nodes, rm.cpn, rm.gpn, tasks)
+        v.header('test case: %s [ %s ]' % (tc['uid'], launcher))
+
+        v.text(None)  # reset text part
+        v.text('nodes  : %s' % tc['nodes'])
+        v.text('procs  : %s' % tc['procs'])
+        v.text('threads: %s' % tc['threads'])
+        v.text('gpus   : %s' % tc['gpus'])
+        v.text('tasks  : %s' % tc['tasks'])
         v.update()
 
         lm = LM.create(launcher, nodes)
@@ -360,7 +446,7 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
             v.update()
 
             # are there any tasks to collect / resources to be freed?
-            running, collected = wait_tasks(nodes, running)
+            running, collected = wait_tasks(lm, pwd, nodes, running)
             done += collected
 
             v.update()
@@ -384,72 +470,6 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
     finally:
         if v : v .close()
         if lm: lm.close()
-
-
-    # once done, we check all DONE tasks if their output actually meets
-    # expectations wrt. number of processes, threads, cores and GPU assignmen
-    for task in tasks:
-        if task['state'] == DONE:
-
-            request = dict()
-            for n, slot in enumerate(task['slots']):
-                cpus = ''
-                for cid in range(rm.cpn):
-                    if cid in slot[2]:
-                        cpus = '1%s' % cpus
-                    else:
-                        cpus = '0%s' % cpus
-
-                gpus = ''
-                for gid in range(rm.gpn):
-                    if gid in slot[3]:
-                        gpus = '1%s' % gpus
-                    else:
-                        gpus = '0%s' % gpus
-                request[n] = {
-                              'CPUS'   : cpus,
-                              'GPUS'   : gpus, 
-                              'NODE'   : slot[1], 
-                              'RANK'   : n, 
-                              'THREADS': len(slot[2]), 
-                             }
-
-            result = dict()
-            for line in open('%s/%s.out' %  (pwd, task['uid']), 'r').readlines():
-                rank, key, val = line.split(':')
-                rank = int(rank.strip())
-                key  = str(key.strip())
-                val  = str(val.strip())
-                if rank not in result:
-                    result[rank]  = dict()
-                if key in ['THREADS', 'RANK']:
-                    result[rank][key] = int(val)
-                else:
-                    result[rank][key] = val
-
-            ranks_1 = sorted(request.keys())
-            ranks_2 = sorted(result.keys())
-            if ranks_1 != ranks_2:
-                err = 'rank mismatch (%s != %s)' % (ranks_1, ranks_2)
-                task['state'] = MISPLACED
-
-            else:
-                err = None
-                for proc in request:
-                    for key in ['CPUS', 'GPUS', 'NODE', 'RANK', 'THREADS']:
-                        val_1 =str(request[proc][key])
-                        val_2 =str(result [proc][key])
-                        if val_1 != val_2:
-                            task['state'] = MISPLACED
-                            print '%s  %s   ' % (val_1, val_2),
-                            err = '-- %s: %s != %s' % (key, val_1, val_2)
-                    if err:
-                        print
-                      # print '%s: %s' % (proc, err)
-                      # print request[proc]
-                      # print result[proc]
-                        task['state'] = MISPLACED
-                        break
 
 
     # summary:
@@ -569,12 +589,9 @@ if __name__ == '__main__':
                     summary = run_tc(rmgr, tgt, launcher, visualizer, tc, pwd)
                     fout.write('%s\n' % summary)
 
-                finally:
-                    pass
-              # except Exception as e:
-              #     print '\nfail test case %s [%s]: %s\n' \
-              #         % (tc['uid'], launcher, repr(e))
-              #     raise
+                except Exception as e:
+                    print '\nfail test case %s [%s]: %s\n' \
+                        % (tc['uid'], launcher, repr(e))
 
 
 # ------------------------------------------------------------------------------

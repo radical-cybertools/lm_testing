@@ -47,7 +47,8 @@ LSPCI=$(which lspci)
 test -z "$LSPCI" && LSPCI='/sbin/lspci'
 test -f "$LSPCI" || LSPCI='/usr/sbin/lspci'
 test -f "$LSPCI" || LSPCI='true'
-GPU_NBITS=$($LSPCI | grep " VGA " | wc -l)
+GPU_NBITS=$($LSPCI | grep -e " VGA " -e ' GV100GL ' | wc -l)
+
 GPU_BITS=''
 n=0
 while test "$n" -lt "$GPU_NBITS"

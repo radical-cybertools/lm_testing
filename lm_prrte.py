@@ -24,17 +24,21 @@ class LM_PRRTE(LM):
 
         with open(fhosts, 'w') as fout:
             for node_uid, node_name, cores, gpus in nodes:
-                fout.write('%s slots=%d\n' % (node_uid, len(cores)))
+                fout.write('%s slots=%d\n' % (node_name, len(cores)))
 
-        pre  = os.environ['PRRTE_DIR']
-        prte = '%s/bin/prte --prefix %s' % (pre, pre)
-        cmd  = '%s --report-uri %s --hostfile %s 2>&1 >> %s' \
-               % (prte, furi, fhosts, flog)
+        pre   = os.environ['PRRTE_DIR']
+        prte  = '%s/bin/prte'      % pre
+        prte += ' --prefix %s'     % pre
+        prte += ' --report-uri %s' % furi
+        prte += ' --hostfile %s'   % fhosts
+      # prte += ' --mca plm_rsh_no_tree_spawn 1'
 
         with open('popen.log', 'a') as fout:
-            fout.write('%s\n' % cmd)
+            fout.write('%s\n' % prte)
 
-        self._proc = sp.Popen(cmd.split(), stdout=sp.PIPE, stderr=sp.STDOUT)
+        fout = open(flog, 'w')
+
+        self._proc = sp.Popen(prte.split(), stdout=fout, stderr=sp.STDOUT)
 
         for _ in range(100):
 
@@ -109,12 +113,15 @@ class LM_PRRTE(LM):
 
         for node_uid, node_name, cores, gpus in slots:
 
-            for _ in cores: hosts.append(node_uid)
-            for _ in gpus : hosts.append(node_uid)
+            hosts.append(node_name)
+          # for _ in cores: hosts.append(node_name)
+          # for _ in gpus : hosts.append(node_name)
 
-        host_str = ','.join(hosts)
-        np_flag  = '-np %s' % len(hosts)
-        map_flag = '--bind-to none'
+        host_str  = ','.join(hosts)
+        np_flag   = '-np %s' % len(hosts)
+        map_flag  = '--report-bindings'
+        map_flag += ' --bind-to hwthread:overload-allowed'
+     #  map_flag += ' --map-by hwthread:PE=%d' % len(slots[0][2])
 
         task['cmd'] = 'prun --hnp "%s" %s %s -host %s %s %s 1>%s 2>%s' \
             % (self._dvm_uri, np_flag, map_flag, host_str, exe, args, fout, ferr)
@@ -122,6 +129,17 @@ class LM_PRRTE(LM):
         self.dump_task(task)
 
         return task['cmd']
+
+
+    # --------------------------------------------------------------------------
+    #
+    def finalize_task(self, pwd, task):
+        '''
+        cleanup after the given task completed
+        '''
+
+        # avoid overloading of the DVM
+        time.sleep(0.100)
 
 
 # ------------------------------------------------------------------------------
