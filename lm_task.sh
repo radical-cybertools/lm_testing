@@ -45,7 +45,12 @@ test -z "$GPU_INFO" && GPU_INFO="$CUDA_VISIBLE_DEVICES"
 test -z "$GPU_INFO" && GPU_INFO="$GPU_DEVICE_ORDINAL"
 GPU_INFO=$(echo " $GPU_INFO " | tr ',' ' ')
 
-GPU_NBITS=$(/usr/sbin/lspci | grep -e ' GV100GL ' | wc -l)
+LSPCI=$(which lspci)
+test -z "$LSPCI" && LSPCI='/sbin/lspci'
+test -f "$LSPCI" || LSPCI='/usr/sbin/lspci'
+test -f "$LSPCI" || LSPCI='true'
+GPU_NBITS=$($LSPCI | grep -e " VGA " -e ' GV100GL ' | wc -l)
+
 GPU_BITS=''
 n=0
 while test "$n" -lt "$GPU_NBITS"
@@ -59,8 +64,9 @@ do
     n=$((n+1))
 done
 
-# # redireect js_task_info to stderr (if available, i.e. on summit)
-# /opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info "$TGT.info" 1>&2
+# redireect js_task_info to stderr (if available, i.e. on summit)
+JS_TASK_INFO=/opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info
+test -f $JS_TASK_INFO && $JS_TASK_INFO "$TGT.info" 1>&2
 
 PREFIX="$MPI_RANK"
 test -z "$PREFIX" && PREFIX='0'
