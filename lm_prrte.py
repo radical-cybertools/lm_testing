@@ -139,7 +139,8 @@ class LM_PRRTE(LM):
         '''
 
         # avoid overloading of the DVM
-        time.sleep(0.100)
+      # time.sleep(0.100)
+        pass
 
 
 # ------------------------------------------------------------------------------

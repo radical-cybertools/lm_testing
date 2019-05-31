@@ -6,6 +6,8 @@ ARG=$1
 PID=$$
 NODE=$(hostname)
 
+test -z "$ARG" && ARG=0
+
 # get MPI rank
 MPI_RANK=""
 test -z "$MPI_RANK" && MPI_RANK="$ALPS_APP_PE"
@@ -57,8 +59,8 @@ do
     n=$((n+1))
 done
 
-# redireect js_task_info to stderr (if available, i.e. on summit)
-/opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info "$TGT.info" 1>&2
+# # redireect js_task_info to stderr (if available, i.e. on summit)
+# /opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info "$TGT.info" 1>&2
 
 PREFIX="$MPI_RANK"
 test -z "$PREFIX" && PREFIX='0'
@@ -70,7 +72,8 @@ printf "$PREFIX : CPUS    : $CPU_BITS\n"
 printf "$PREFIX : GPUS    : $GPU_BITS\n"
 printf "$PREFIX : RANK    : $MPI_RANK\n"
 printf "$PREFIX : THREADS : $THREAD_NUM\n"
+printf "$PREFIX : SLEEP   : $ARG\n"
 
 # if so requested, sleep for a bit
-test -z "$ARG" || sleep $ARG
+sleep $ARG
 

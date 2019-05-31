@@ -459,15 +459,15 @@ class VizText(Viz):
         t_failed    = len([1 for t in self._tasks if t['state'] == FAILED])
         t_misplaced = len([1 for t in self._tasks if t['state'] == MISPLACED])
 
-        data  = ' || %9.2f || %6d | %6d | %6d || %6d | %6d | %6d |' \
-            % (self.now(), c_total, c_busy, c_free, g_total, g_busy, g_free)
+        data  = ' || %%9.2f || %6d | %6d | %6d || %6d | %6d | %6d |' \
+            % (c_total, c_busy, c_free, g_total, g_busy, g_free)
 
         data += '| %6d | %6d | %6d | %6d | %6d | %6d | %6d | %6d ||' \
               % (t_total, t_new, t_waiting, t_scheduled,
                  t_running ,t_done, t_failed, t_misplaced)
 
         if data != self._old_data:
-            print data
+            print data % self.now()
             self._old_data = data
             self._iter += 1
 

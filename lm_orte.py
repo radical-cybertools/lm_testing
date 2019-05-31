@@ -41,7 +41,7 @@ class LM_ORTE(LM):
             if self._dvm_uri:
                 break
 
-            time.sleep(0.1)
+          # time.sleep(0.1)
 
         if not self._dvm_uri:
             raise RuntimeError('ORTE DVM did not come up')
@@ -124,7 +124,8 @@ class LM_ORTE(LM):
         '''
 
         # avoid overloading of the DVM
-        time.sleep(0.1)
+      # time.sleep(0.1)
+        pass
 
 
 # ------------------------------------------------------------------------------

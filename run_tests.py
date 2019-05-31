@@ -28,6 +28,9 @@ __doc__ = re.sub(r'^\s*```.*$\n', '', _doc, flags=re.MULTILINE)
 _tzero  = time.time()
 
 
+BULK_SCHEDULED = 256
+WAIT_TIMEOUT   =  10
+
 # ------------------------------------------------------------------------------
 #
 def create_tasks(tc, pwd):
@@ -70,7 +73,7 @@ def create_tasks(tc, pwd):
 
         task = {'uid'     : 'task.%06d' % tid, 
                 'exe'     : tc['exe'],
-                'args'    : tc['args'],
+                'args'    : tc.get('args', ''),
                 'pwd'     : pwd,
                 'n_procs' : n_procs,
                 'n_gpus'  : n_gpus,
@@ -163,6 +166,11 @@ def schedule_tasks(tc, rm, nodes, tasks):
     gpn = rm.gpn
 
     for task in tasks:
+
+      # if len(scheduled) > BULK_SCHEDULED:
+      #     task['state'] = WAITING
+      #     waiting.append(task)
+      #     continue
 
         task['slots'] = list()
 
@@ -279,6 +287,12 @@ def execute_tasks(lm, pwd, scheduled):
     Prepare the given task for excution, and run it.
     '''
 
+    delay = 0.05           # have 0.01 sec between executions
+    check = 0.01           # check that frequently if delay has passed
+
+    last  = time.time()    # last execution happened then
+    cont  = last + delay   # next execution can happen then
+
     with open('popen.log', 'a+') as fout:
 
         running = list()
@@ -289,11 +303,17 @@ def execute_tasks(lm, pwd, scheduled):
 
             assert(task['state'] == SCHEDULED)
 
+            now = time.time()
+            while now < cont:
+                time.sleep(check)
+                now = time.time()
+
+            cont = now + delay
+
             task['cmd']   = lm.prepare_task(pwd, task)
             task['proc']  = sp.Popen(task['cmd'], shell=True)
             task['state'] = RUNNING
 
-            now = time.time() - _tzero
             fout.write('%5.3f %s\n' % (now, task['cmd']))
 
             running.append(task)
@@ -316,6 +336,7 @@ def wait_tasks(lm, pwd, nodes, running):
 
     still_running = list()  # tasks continue to run
     collected     = list()  # tasks are done
+    start         = time.time()
 
     for task in running:
 
@@ -330,8 +351,8 @@ def wait_tasks(lm, pwd, nodes, running):
             if task['ret']: task['state'] = FAILED
             else          : task['state'] = DONE
 
-            # clean up
-         #  lm.finalize_task(pwd, task)
+        ##  # clean up
+        ##  lm.finalize_task(pwd, task)
 
 
             if task['state'] == DONE:
@@ -378,14 +399,14 @@ def wait_tasks(lm, pwd, nodes, running):
                             task['state'] = MISPLACED
                             break
 
-
-
             collected.append(task)
 
-    if collected:
+      # now = time.time()
+      # if now - start > WAIT_TIMEOUT:
+      #     break
 
-        time.sleep(0.1)
-
+      # if not collected:
+      #     time.sleep(0.1)
 
     # free resources
     unschedule_tasks(nodes, collected)
@@ -461,8 +482,8 @@ def run_tc(rmgr, tgt, launcher, visualizer, tc, pwd):
             running += execute_tasks(lm, pwd, scheduled)
             scheduled = list()
 
-            # slow down, matey!
-            time.sleep(0.1)
+         ## # slow down, matey!
+         ## time.sleep(0.1)
             i += 1
 
         v.update()
@@ -585,13 +606,14 @@ if __name__ == '__main__':
                         % (tc['uid'], launcher, pwd)
                     continue
 
-                try:
+              # try:
+                if True:
                     summary = run_tc(rmgr, tgt, launcher, visualizer, tc, pwd)
                     fout.write('%s\n' % summary)
 
-                except Exception as e:
-                    print '\nfail test case %s [%s]: %s\n' \
-                        % (tc['uid'], launcher, repr(e))
+              # except Exception as e:
+              #     print '\nfail test case %s [%s]: %s\n' \
+              #         % (tc['uid'], launcher, repr(e))
 
 
 # ------------------------------------------------------------------------------

@@ -81,7 +81,8 @@ class LM_JSRUN_ERF(LM):
         '''
 
         # avoid overloading the system
-        time.sleep(0.1)
+      # time.sleep(0.1)
+        pass
 
 
 # ------------------------------------------------------------------------------
