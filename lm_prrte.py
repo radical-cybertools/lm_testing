@@ -58,6 +58,8 @@ class LM_PRRTE(LM):
         if not self._dvm_uri:
             raise RuntimeError('PRTE DVM did not come up')
 
+      # time.sleep(5)  # let DVM settle?  FIXME
+
 
     # --------------------------------------------------------------------------
     #

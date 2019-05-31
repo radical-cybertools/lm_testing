@@ -2,10 +2,10 @@
 {
     "nodes"     : 10,
 
-    "procs"     : 1,
+    "procs"     : 8,
     "threads"   : 1,
     "gpus"      : 0,
-    "tasks"     : 10000,
+    "tasks"     : 4096,
     "exe"       : "$(pwd -P)/lm_task.sh",
     "args"      : "10"
 }

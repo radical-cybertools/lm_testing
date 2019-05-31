@@ -287,8 +287,8 @@ def execute_tasks(lm, pwd, scheduled):
     Prepare the given task for excution, and run it.
     '''
 
-    delay = 0.05           # have 0.01 sec between executions
-    check = 0.01           # check that frequently if delay has passed
+    delay = 0.1            # have 0.01 sec between executions
+    check = 0.05           # check that frequently if delay has passed
 
     last  = time.time()    # last execution happened then
     cont  = last + delay   # next execution can happen then
@@ -407,6 +407,9 @@ def wait_tasks(lm, pwd, nodes, running):
 
       # if not collected:
       #     time.sleep(0.1)
+
+    # FIXME: slow down for system to sync up
+    time.sleep(0)
 
     # free resources
     unschedule_tasks(nodes, collected)
