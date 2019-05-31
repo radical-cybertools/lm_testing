@@ -8,9 +8,10 @@
    will prepare to run that workload via
 
         - fork
-        - jsrun 
-        - prrte (prun)
-        - orte  (orte-submit)
+        - jsrun_rs   (resource sets)
+        - jsrun_erf  (ERF resource spec)
+        - prrte      (prun)
+        - orte       (orte-submit)
 
    For the `prrte` and `orte` launchers, a  DVM is created and terminated
    on the fly, for each test case.  The state of all nodes used is reset
@@ -46,6 +47,10 @@
         - number of tasks in RUNNING   state
         - number of tasks in DONE      state
         - number of tasks in FAILED    state
+        - number of tasks in DISPLACED state
+        
+   Tasks in `DISPLACED` state succeded, but used other cores than assigned by
+   the scheduler.
 
    The following command can be used to obtain a quick overview of the
    test results:
@@ -126,22 +131,22 @@
 
 ```sh
         > rm -r scratch/fork/tc_1/   # remove test scratch dir
-        > ./run_tests.py -lm fork -tc test_cases/tc_1.json
+        > ./run_tests.py -lm prrte -rm lsf -tgt summit -tc test_cases/tc_1.json
 
          ----------------------------------------------------------------
-         text case: tc_1 [ fork ]
+         text case: tc_1 [ prrte ]
 
-         ||  cores |   busy |   free ||   gpus |   busy |   free ||  tasks |    new |   wait |  sched |    run |   done |   fail ||
-         ||     42 |      0 |     42 ||      6 |      0 |      6 ||     42 |     42 |      0 |      0 |      0 |      0 |      0 ||
-         ||     42 |     42 |      0 ||      6 |      0 |      6 ||     42 |      0 |      0 |     42 |      0 |      0 |      0 ||
-         ||     42 |     42 |      0 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     42 |      0 |      0 ||
-         ||     42 |     39 |      3 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     39 |      3 |      0 ||
-         ||     42 |     31 |     11 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     31 |     11 |      0 ||
-         ||     42 |     14 |     28 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     14 |     28 |      0 ||
-         ||     42 |      0 |     42 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |      0 |     42 |      0 ||
+         ||  cores |   busy |   free ||   gpus |   busy |   free ||  tasks |    new |   wait |  sched |    run |   done |   fail | xplace ||
+         ||     42 |      0 |     42 ||      6 |      0 |      6 ||     42 |     42 |      0 |      0 |      0 |      0 |      0 |      0 ||
+         ||     42 |     42 |      0 ||      6 |      0 |      6 ||     42 |      0 |      0 |     42 |      0 |      0 |      0 |      0 ||
+         ||     42 |     42 |      0 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     42 |      0 |      0 |      0 ||
+         ||     42 |     39 |      3 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     39 |      3 |      0 |      0 ||
+         ||     42 |     31 |     11 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     31 |     11 |      0 |      0 ||
+         ||     42 |     14 |     28 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |     14 |     28 |      0 |      0 ||
+         ||     42 |      0 |     42 ||      6 |      0 |      6 ||     42 |      0 |      0 |      0 |      0 |     42 |      0 |      0 ||
 
         > cat summary.txt  | cut -f 1,2,10,15,16 -d ' ' | column -t
-        tc_1  fork  42  42  0
+        tc_1  prrte  42  42  0
 ```
 
 ### Notes:
@@ -170,7 +175,7 @@
 
 ### Missing Features:
 
-   - radical.pilot should  be added as test backend
+   - radical.pilot should be added as test backend
    - non-interactive mode: the tasks are not be executed, but but
      a qsub script is to be created for each of the above, and the
      workload execution prepared up to the point where only the node
