@@ -64,9 +64,9 @@ do
     n=$((n+1))
 done
 
-# redireect js_task_info to stderr (if available, i.e. on summit)
-JS_TASK_INFO=/opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info
-test -f $JS_TASK_INFO && $JS_TASK_INFO "$TGT.info" 1>&2
+# # redireect js_task_info to stderr (if available, i.e. on summit)
+# JS_TASK_INFO=/opt/ibm/spectrum_mpi/jsm_pmix/bin/js_task_info
+# test -f $JS_TASK_INFO && $JS_TASK_INFO "$TGT.info" 1>&2
 
 PREFIX="$MPI_RANK"
 test -z "$PREFIX" && PREFIX='0'

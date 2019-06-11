@@ -287,7 +287,7 @@ def execute_tasks(lm, pwd, scheduled):
     Prepare the given task for excution, and run it.
     '''
 
-    delay = 0.1            # have 0.01 sec between executions
+    delay = 0.05           # have 0.01 sec between executions
     check = 0.05           # check that frequently if delay has passed
 
     last  = time.time()    # last execution happened then
